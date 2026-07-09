@@ -50,8 +50,10 @@ fi
 sudo ln -sf "$NGINX_SITE" "/etc/nginx/sites-enabled/${DOMAIN}"
 sudo nginx -t
 sudo -u www-data php artisan config:clear
-sudo -u www-data php artisan config:cache
+sudo -u www-data php artisan cache:clear
 sudo -u www-data php artisan view:clear
+sudo -u www-data php artisan config:cache
+sudo -u www-data php artisan view:cache
 sudo systemctl reload php8.5-fpm
 sudo systemctl reload nginx
 
