@@ -5,8 +5,12 @@ FROM node:20-alpine AS frontend
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
+COPY package*.json ./
+RUN if [ -f package-lock.json ]; then \
+      npm ci --ignore-scripts; \
+    else \
+      npm install --ignore-scripts; \
+    fi
 
 COPY vite.config.js ./
 COPY resources ./resources

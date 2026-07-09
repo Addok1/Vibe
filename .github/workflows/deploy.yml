@@ -52,14 +52,14 @@ jobs:
 
             APP_DIR=""
             for d in "/var/www/viverider" "/var/www/viverider/website" "/var/www/viverider/viverider"; do
-              if [ -f "$d/docker-compose.yml" ] && [ -f "$d/Dockerfile" ] && [ -f "$d/package-lock.json" ]; then
+              if [ -f "$d/docker-compose.yml" ] && [ -f "$d/Dockerfile" ] && [ -f "$d/package.json" ]; then
                 APP_DIR="$d"
                 break
               fi
             done
 
             if [ -z "$APP_DIR" ]; then
-              echo "App root not found (docker-compose.yml/Dockerfile/package-lock.json)."
+              echo "App root not found (docker-compose.yml/Dockerfile/package.json)."
               exit 1
             fi
 
