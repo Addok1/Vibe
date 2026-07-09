@@ -17,9 +17,9 @@ jobs:
       - name: Clean server directory
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH }}
           script: |
             set -e
             sudo mkdir -p /var/www/viverider
@@ -29,9 +29,9 @@ jobs:
       - name: Upload code to server
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH }}
           source: "."
           target: "/var/www/viverider"
           overwrite: true
@@ -39,9 +39,9 @@ jobs:
       - name: Run Docker on server
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH }}
           script: |
             set -e
             if [ -f /var/www/viverider/website/docker-compose.yml ]; then
