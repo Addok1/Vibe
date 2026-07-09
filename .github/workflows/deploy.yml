@@ -69,20 +69,28 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH }}
           script: |
-            set -euxo pipefail
+            set -exo pipefail
             cd /var/www/viverider
 
             php -v
 
             printf "%s" '${{ secrets.SERVER_ENV }}' > .env
-            set -a
-            . ./.env
-            set +a
 
-            if [ "${DB_HOST:-}" = "mysql" ]; then
+            read_env() {
+              grep -E "^${1}=" .env | head -n1 | cut -d= -f2- | sed 's/^"\(.*\)"$/\1/' | sed "s/^'\(.*\)'$/\1/" | tr -d '\r'
+            }
+
+            if [ "$(read_env DB_HOST)" = "mysql" ]; then
               sed -i 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' .env
-              export DB_HOST=127.0.0.1
             fi
+
+            DB_DATABASE="$(read_env DB_DATABASE)"
+            DB_USERNAME="$(read_env DB_USERNAME)"
+            DB_PASSWORD="$(read_env DB_PASSWORD)"
+            DB_ROOT_PASSWORD="$(read_env DB_ROOT_PASSWORD)"
+            DB_ROOT_PASSWORD="${DB_ROOT_PASSWORD:-$DB_PASSWORD}"
+
+            export DB_DATABASE DB_USERNAME DB_PASSWORD DB_ROOT_PASSWORD
 
             if ! command -v docker >/dev/null 2>&1; then
               echo "Docker is required for MySQL container. Install docker first."
@@ -98,7 +106,7 @@ jobs:
               exit 1
             fi
 
-            $DOCKER_COMPOSE_CMD --env-file .env -f docker-compose.db.yml up -d
+            $DOCKER_COMPOSE_CMD -f docker-compose.db.yml up -d
 
             for i in $(seq 1 30); do
               if docker exec viverider-mysql mysqladmin ping -h 127.0.0.1 -u"${DB_USERNAME}" -p"${DB_PASSWORD}" --silent >/dev/null 2>&1; then
