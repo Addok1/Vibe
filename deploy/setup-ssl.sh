@@ -29,12 +29,22 @@ if [ ! -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
   if [ ! -f /etc/letsencrypt/ssl-dhparams.pem ]; then
     sudo openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048
   fi
-  sudo certbot certonly --webroot -w "${APP_DIR}/public" \
+  if ! sudo certbot certonly --webroot -w "${APP_DIR}/public" \
     -d "${DOMAIN}" -d "${WWW_DOMAIN}" \
-    --non-interactive --agree-tos -m "${EMAIL}"
+    --non-interactive --agree-tos -m "${EMAIL}"; then
+    sudo certbot certonly --webroot -w "${APP_DIR}/public" \
+      -d "${DOMAIN}" \
+      --non-interactive --agree-tos -m "${EMAIL}" || true
+  fi
 fi
 
-sudo cp deploy/nginx-viberidegh.ssl.conf /etc/nginx/sites-available/viberidegh.online
+if [ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
+  sudo cp deploy/nginx-viberidegh.ssl.conf /etc/nginx/sites-available/viberidegh.online
+else
+  echo "Using temporary self-signed certificate (re-run after fixing certbot)."
+  sudo apt-get install -y ssl-cert
+  sudo cp deploy/nginx-viberidegh.ssl-snakeoil.conf /etc/nginx/sites-available/viberidegh.online
+fi
 sudo nginx -t
 sudo systemctl reload nginx
 

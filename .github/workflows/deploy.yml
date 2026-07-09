@@ -247,13 +247,18 @@ jobs:
             if [ ! -f "${CERT_PATH}" ] && [ -n "${SSL_EMAIL}" ]; then
               echo "Requesting Let's Encrypt certificate for ${APP_HOST}..."
               sudo apt-get update -qq
-              sudo apt-get install -y certbot python3-certbot-nginx
+              sudo apt-get install -y certbot python3-certbot-nginx ssl-cert
               if [ ! -f /etc/letsencrypt/ssl-dhparams.pem ]; then
                 sudo openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048
               fi
-              sudo certbot certonly --webroot -w /var/www/viverider/public \
+              if ! sudo certbot certonly --webroot -w /var/www/viverider/public \
                 -d "${APP_HOST}" -d "www.${APP_HOST}" \
-                --non-interactive --agree-tos -m "${SSL_EMAIL}" || true
+                --non-interactive --agree-tos -m "${SSL_EMAIL}"; then
+                echo "Certbot failed for ${APP_HOST} + www — retrying primary domain only..."
+                sudo certbot certonly --webroot -w /var/www/viverider/public \
+                  -d "${APP_HOST}" \
+                  --non-interactive --agree-tos -m "${SSL_EMAIL}" || true
+              fi
             fi
 
             if [ -f "${CERT_PATH}" ]; then
@@ -268,16 +273,30 @@ jobs:
               fi
               APP_URL="$(read_env APP_URL)"
             else
-              echo "No SSL certificate — HTTP only (no redirect). Run: sudo SSL_EMAIL=you@email.com bash deploy/setup-ssl.sh"
-              sudo cp deploy/nginx-viverider.conf "${NGINX_SITE}"
-              sudo nginx -t
-              sed -i "s|^APP_URL=.*|APP_URL=http://${APP_HOST}|" .env
-              if grep -q '^SESSION_SECURE_COOKIE=' .env; then
-                sed -i 's/^SESSION_SECURE_COOKIE=.*/SESSION_SECURE_COOKIE=false/' .env
+              sudo apt-get install -y ssl-cert 2>/dev/null || true
+              if [ -f /etc/ssl/certs/ssl-cert-snakeoil.pem ]; then
+                echo "Let's Encrypt unavailable — enabling temporary self-signed HTTPS on port 443."
+                sudo cp deploy/nginx-viberidegh.ssl-snakeoil.conf "${NGINX_SITE}"
+                sudo nginx -t
+                sed -i "s|^APP_URL=.*|APP_URL=https://${APP_HOST}|" .env
+                if grep -q '^SESSION_SECURE_COOKIE=' .env; then
+                  sed -i 's/^SESSION_SECURE_COOKIE=.*/SESSION_SECURE_COOKIE=true/' .env
+                else
+                  echo 'SESSION_SECURE_COOKIE=true' >> .env
+                fi
+                APP_URL="$(read_env APP_URL)"
               else
-                echo 'SESSION_SECURE_COOKIE=false' >> .env
+                echo "No SSL certificate — HTTP only (no redirect). Run: sudo SSL_EMAIL=you@email.com bash deploy/setup-ssl.sh"
+                sudo cp deploy/nginx-viverider.conf "${NGINX_SITE}"
+                sudo nginx -t
+                sed -i "s|^APP_URL=.*|APP_URL=http://${APP_HOST}|" .env
+                if grep -q '^SESSION_SECURE_COOKIE=' .env; then
+                  sed -i 's/^SESSION_SECURE_COOKIE=.*/SESSION_SECURE_COOKIE=false/' .env
+                else
+                  echo 'SESSION_SECURE_COOKIE=false' >> .env
+                fi
+                APP_URL="$(read_env APP_URL)"
               fi
-              APP_URL="$(read_env APP_URL)"
             fi
 
             sudo ln -sf "${NGINX_SITE}" /etc/nginx/sites-enabled/viberidegh.online
