@@ -174,8 +174,12 @@ class AppServiceProvider extends ServiceProvider
             view()->share('banner_description_color', $v('banner_description_color') ?? '#ffff');
             view()->share('banner_button_color', $v('banner_button_color') ?? '#ffff');
 
-            view()->share('footer_content1', $v('footer_content1'));
-            view()->share('footer_content2', $v('footer_content2'));
+            $footer1 = (string) ($v('footer_content1') ?? '2026 © viberidegh.');
+            $footer2 = (string) ($v('footer_content2') ?? 'Design & Develop by viberidegh');
+            $footer1 = str_ireplace(['sangvish', 'viberide'], 'viberidegh', $footer1);
+            $footer2 = str_ireplace(['sangvish', 'viberide'], 'viberidegh', $footer2);
+            view()->share('footer_content1', $footer1);
+            view()->share('footer_content2', $footer2);
             view()->share('dispatcher_sidebar_color', $v('dispatcher_sidebar_color'));
             view()->share('dispatcher_sidebar_txt_color', $v('dispatcher_sidebar_txt_color'));
 
