@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Viveride — AWS EC2 Docker deployment script
+# Viverider — AWS EC2 Docker deployment script
 # Run on Ubuntu 22.04/24.04 EC2 instance
 # =============================================================================
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/opt/viveride}"
+APP_DIR="${APP_DIR:-/opt/viverider}"
 COMPOSE="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
 
 echo "=============================================="
-echo " Viveride Docker Deploy"
+echo " Viverider Docker Deploy"
 echo " App dir: ${APP_DIR}/website"
 echo "=============================================="
 
@@ -48,12 +48,12 @@ echo ""
 echo "=============================================="
 echo " Deploy complete!"
 echo ""
-echo " Site:    http://www.viveride.online"
-echo " Admin:   http://www.viveride.online/login/admin"
+echo " Site:    http://www.viverider.online"
+echo " Admin:   http://www.viverider.online/login/admin"
 echo ""
 echo " Next steps:"
 echo "   1. Point DNS A records to this server IP"
-echo "   2. Import DB:  docker compose exec -T mysql mysql -u viveride -p viveride < /tmp/database.txt"
+echo "   2. Import DB:  docker compose exec -T mysql mysql -u viverider -p viverider < /tmp/database.txt"
 echo "   3. Enable SSL: bash deploy/ssl-init.sh"
 echo ""
 echo " Logs:    ${COMPOSE} logs -f app"

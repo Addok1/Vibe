@@ -51,8 +51,8 @@ COPY . .
 # =============================================================================
 FROM php:8.4-fpm-alpine AS production
 
-LABEL maintainer="viveride"
-LABEL description="Viveride Laravel application"
+LABEL maintainer="viverider"
+LABEL description="Viverider Laravel application"
 
 RUN apk add --no-cache \
     bash \

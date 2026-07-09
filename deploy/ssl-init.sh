@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # =============================================================================
 # Obtain Let's Encrypt SSL and enable HTTPS nginx config
-# Run from: /opt/viveride/website
+# Run from: /opt/viverider/website
 # =============================================================================
 set -euo pipefail
 
-DOMAIN="${DOMAIN:-viveride.online}"
-EMAIL="${EMAIL:-admin@viveride.online}"
+DOMAIN="${DOMAIN:-viverider.online}"
+EMAIL="${EMAIL:-admin@viverider.online}"
 COMPOSE="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
 
 echo "==> Obtaining SSL for ${DOMAIN} and www.${DOMAIN}..."
