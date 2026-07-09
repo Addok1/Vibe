@@ -3,10 +3,13 @@
 -- Prod:   docker exec -i viverider-mysql mysql -h 127.0.0.1 -u viverider_usr -p"$DB_PASSWORD" viverider < deploy/rebrand-viberide.sql
 
 UPDATE settings SET value = 'viberidegh' WHERE name = 'app_name';
-UPDATE settings SET value = REPLACE(value, 'sangvish', 'Viberide') WHERE name = 'mail_from_name' AND value LIKE '%sangvish%';
+UPDATE settings SET value = '2026 © viberidegh.' WHERE name = 'footer_content1';
+UPDATE settings SET value = 'Design & Develop by viberidegh' WHERE name = 'footer_content2';
+UPDATE settings SET value = REPLACE(REPLACE(REPLACE(value, 'Sangvish', 'viberidegh'), 'sangvish', 'viberidegh'), 'Viberide', 'viberidegh')
+WHERE name IN ('footer_content1', 'footer_content2', 'mail_from_name');
 UPDATE settings SET value = 'support@viberidegh.online' WHERE name IN ('mail_username', 'mail_from_address') AND value LIKE '%sangvish%';
 
-UPDATE third_party_settings SET value = REPLACE(REPLACE(value, '@sangvish.com', '@viberidegh.online'), 'sangvish', 'Viberide') WHERE value LIKE '%sangvish%';
+UPDATE third_party_settings SET value = REPLACE(REPLACE(value, '@sangvish.com', '@viberidegh.online'), 'sangvish', 'viberidegh') WHERE value LIKE '%sangvish%';
 
 UPDATE landing_contacts SET
   contact_mail = REPLACE(REPLACE(contact_mail, 'dilip@sangvish.com', 'support@viberidegh.online'), 'support@sangvish.com', 'support@viberidegh.online'),
@@ -26,10 +29,10 @@ UPDATE landing_homes SET
   hero_driver_link_apple = REPLACE(hero_driver_link_apple, 'https://taxi1.sangvish.com/', 'https://viberidegh.online/');
 
 UPDATE landing_quicklinks SET
-  privacy = REPLACE(REPLACE(privacy, 'Sangvish', 'Viberide'), 'sangvish', 'Viberide'),
-  terms = REPLACE(REPLACE(terms, 'Sangvish', 'Viberide'), 'sangvish', 'Viberide'),
-  compliance = REPLACE(REPLACE(compliance, 'Sangvish', 'Viberide'), 'sangvish', 'Viberide'),
-  dmv = REPLACE(REPLACE(dmv, 'Sangvish', 'Viberide'), 'sangvish', 'Viberide')
+  privacy = REPLACE(REPLACE(privacy, 'Sangvish', 'viberidegh'), 'sangvish', 'viberidegh'),
+  terms = REPLACE(REPLACE(terms, 'Sangvish', 'viberidegh'), 'sangvish', 'viberidegh'),
+  compliance = REPLACE(REPLACE(compliance, 'Sangvish', 'viberidegh'), 'sangvish', 'viberidegh'),
+  dmv = REPLACE(REPLACE(dmv, 'Sangvish', 'viberidegh'), 'sangvish', 'viberidegh')
 WHERE privacy LIKE '%sangvish%' OR terms LIKE '%sangvish%' OR compliance LIKE '%sangvish%' OR dmv LIKE '%sangvish%' OR privacy LIKE '%Sangvish%';
 
 UPDATE single_landing_headers SET
@@ -37,10 +40,10 @@ UPDATE single_landing_headers SET
 WHERE copy_rights LIKE '%sangvish%' OR copy_rights LIKE '%Viberide%' OR copy_rights LIKE '%Alternativo%';
 
 UPDATE mail_templates SET
-  translation_dataset = REPLACE(REPLACE(translation_dataset, 'Sangvish', 'Viberide'), 'sangvish', 'Viberide')
+  translation_dataset = REPLACE(REPLACE(translation_dataset, 'Sangvish', 'viberidegh'), 'sangvish', 'viberidegh')
 WHERE translation_dataset LIKE '%sangvish%' OR translation_dataset LIKE '%Sangvish%';
 
 UPDATE notification_channels SET
-  mail_body = REPLACE(REPLACE(mail_body, 'Sangvish', 'Viberide'), 'sangvish', 'Viberide'),
-  footer_copyrights = REPLACE(footer_copyrights, 'viberidegh', 'Viberide')
-WHERE mail_body LIKE '%Sangvish%' OR mail_body LIKE '%sangvish%' OR footer_copyrights LIKE '%viberidegh%';
+  mail_body = REPLACE(REPLACE(mail_body, 'Sangvish', 'viberidegh'), 'sangvish', 'viberidegh'),
+  footer_copyrights = REPLACE(REPLACE(footer_copyrights, 'Sangvish', 'viberidegh'), 'sangvish', 'viberidegh')
+WHERE mail_body LIKE '%Sangvish%' OR mail_body LIKE '%sangvish%' OR footer_copyrights LIKE '%Sangvish%' OR footer_copyrights LIKE '%sangvish%';
