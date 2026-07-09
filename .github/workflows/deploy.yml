@@ -68,6 +68,11 @@ jobs:
           key: ${{ secrets.SSH }}
           script: |
             set -e
+            sudo mkdir -p /var/www/.viverider-persist
+            if [ -d /var/www/viverider/storage/app/public/uploads ]; then
+              echo "Backing up uploaded files before deploy..."
+              sudo rsync -a --delete /var/www/viverider/storage/app/public/uploads/ /var/www/.viverider-persist/uploads/
+            fi
             sudo mkdir -p /var/www/viverider
             sudo rm -rf /var/www/viverider/*
             sudo rm -rf /var/www/viverider/.[!.]* /var/www/viverider/..?* || true
@@ -178,17 +183,46 @@ jobs:
               echo "Seed lock created: ${SEED_LOCK}"
             fi
 
-            sudo mkdir -p storage/logs storage/framework/{cache,sessions,views} storage/app/public bootstrap/cache
+            sudo mkdir -p storage/logs storage/framework/{cache,sessions,views} storage/app/public/uploads bootstrap/cache
+            if [ -d /var/www/.viverider-persist/uploads ]; then
+              echo "Restoring uploaded files..."
+              sudo rsync -a /var/www/.viverider-persist/uploads/ storage/app/public/uploads/
+            fi
             sudo chown -R www-data:www-data storage bootstrap/cache
             sudo chmod -R ug+rwx storage bootstrap/cache
 
             sudo -u www-data php artisan package:discover --ansi
-            sudo -u www-data php artisan storage:link --force 2>/dev/null || true
+            sudo rm -f public/storage
+            sudo -u www-data php artisan storage:link --force
+            if [ ! -e public/storage/uploads/website/images/hero3.png ]; then
+              echo "storage:link failed; creating symlink manually..."
+              sudo ln -sfn /var/www/viverider/storage/app/public /var/www/viverider/public/storage
+            fi
+            if [ ! -f storage/app/public/uploads/website/images/hero3.png ]; then
+              echo "ERROR: Default landing images missing in storage/app/public/uploads."
+              echo "Ensure storage/app/public/uploads is committed and pushed to git."
+              exit 1
+            fi
+            echo "Upload check OK: $(find storage/app/public/uploads -type f | wc -l) files"
             sudo -u www-data php artisan migrate --force
             sudo -u www-data php artisan config:cache
             sudo -u www-data php artisan view:cache
 
+            if [ -f deploy/nginx-viverider.conf ]; then
+              sudo cp deploy/nginx-viverider.conf /etc/nginx/sites-available/viverider.online
+              sudo ln -sf /etc/nginx/sites-available/viverider.online /etc/nginx/sites-enabled/viverider.online
+              sudo nginx -t
+            fi
+
             sudo systemctl reload php8.5-fpm
             sudo systemctl reload nginx
+
+            if curl -sf -o /dev/null -w "%{http_code}" http://127.0.0.1/storage/uploads/website/images/hero3.png -H "Host: viverider.online" | grep -q 200; then
+              echo "Image serve check: OK"
+            else
+              echo "WARNING: Image test failed — check nginx /storage/ alias and uploads on disk."
+              ls -la storage/app/public/uploads/website/images/hero3.png || true
+              ls -la public/storage/uploads/website/images/hero3.png 2>/dev/null || true
+            fi
 
             echo "Deploy complete: http://viverider.online"
