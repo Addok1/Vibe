@@ -14,8 +14,8 @@ sudo chmod -R ug+rwx storage
 
 echo "==> Creating public/storage symlink..."
 sudo rm -f public/storage
-sudo -u www-data php artisan storage:link --force || \
-  sudo ln -sfn "${APP_DIR}/storage/app/public" "${APP_DIR}/public/storage"
+sudo ln -sfn "${APP_DIR}/storage/app/public" "${APP_DIR}/public/storage"
+sudo chown -h www-data:www-data public/storage
 
 if [ -f deploy/nginx-viverider.conf ]; then
   echo "==> Updating nginx config..."

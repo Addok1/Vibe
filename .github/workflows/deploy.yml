@@ -192,12 +192,11 @@ jobs:
             sudo chmod -R ug+rwx storage bootstrap/cache
 
             sudo -u www-data php artisan package:discover --ansi
+
+            # public/ is owned by deploy user; www-data cannot symlink there — use root
             sudo rm -f public/storage
-            sudo -u www-data php artisan storage:link --force
-            if [ ! -e public/storage/uploads/website/images/hero3.png ]; then
-              echo "storage:link failed; creating symlink manually..."
-              sudo ln -sfn /var/www/viverider/storage/app/public /var/www/viverider/public/storage
-            fi
+            sudo ln -sfn /var/www/viverider/storage/app/public /var/www/viverider/public/storage
+            sudo chown -h www-data:www-data public/storage
             if [ ! -f storage/app/public/uploads/website/images/hero3.png ]; then
               echo "ERROR: Default landing images missing in storage/app/public/uploads."
               echo "Ensure storage/app/public/uploads is committed and pushed to git."
