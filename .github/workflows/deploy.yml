@@ -62,7 +62,7 @@ jobs:
           target: "/var/www/viverider"
           overwrite: true
 
-      - name: Deploy on server (no Docker)
+      - name: Deploy on server (app host + mysql docker)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
@@ -75,6 +75,43 @@ jobs:
             php -v
 
             printf "%s" '${{ secrets.SERVER_ENV }}' > .env
+            set -a
+            . ./.env
+            set +a
+
+            if [ "${DB_HOST:-}" = "mysql" ]; then
+              sed -i 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+              export DB_HOST=127.0.0.1
+            fi
+
+            if ! command -v docker >/dev/null 2>&1; then
+              echo "Docker is required for MySQL container. Install docker first."
+              exit 1
+            fi
+
+            if docker compose version >/dev/null 2>&1; then
+              DOCKER_COMPOSE_CMD="docker compose"
+            elif command -v docker-compose >/dev/null 2>&1; then
+              DOCKER_COMPOSE_CMD="docker-compose"
+            else
+              echo "Docker Compose is required. Install docker compose plugin."
+              exit 1
+            fi
+
+            $DOCKER_COMPOSE_CMD --env-file .env -f docker-compose.db.yml up -d
+
+            for i in $(seq 1 30); do
+              if docker exec viverider-mysql mysqladmin ping -h 127.0.0.1 -u"${DB_USERNAME}" -p"${DB_PASSWORD}" --silent >/dev/null 2>&1; then
+                echo "MySQL is ready."
+                break
+              fi
+              if [ "$i" -eq 30 ]; then
+                echo "MySQL container failed to become ready in time."
+                docker logs viverider-mysql --tail 100 || true
+                exit 1
+              fi
+              sleep 2
+            done
 
             php artisan package:discover --ansi
             php artisan storage:link --force 2>/dev/null || true
