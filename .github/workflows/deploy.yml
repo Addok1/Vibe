@@ -99,7 +99,7 @@ jobs:
             printf "%s" '${{ secrets.SERVER_ENV }}' > .env
 
             read_env() {
-              grep -E "^${1}=" .env | head -n1 | cut -d= -f2- | sed 's/^"\(.*\)"$/\1/' | sed "s/^'\(.*\)'$/\1/" | tr -d '\r'
+              grep -E "^${1}=" .env 2>/dev/null | head -n1 | cut -d= -f2- | sed 's/^"\(.*\)"$/\1/' | sed "s/^'\(.*\)'$/\1/" | tr -d '\r' || true
             }
 
             if [ "$(read_env DB_HOST)" = "mysql" ]; then
@@ -111,6 +111,11 @@ jobs:
             DB_PASSWORD="$(read_env DB_PASSWORD)"
             DB_ROOT_PASSWORD="$(read_env DB_ROOT_PASSWORD)"
             DB_ROOT_PASSWORD="${DB_ROOT_PASSWORD:-$DB_PASSWORD}"
+
+            if [ -z "$DB_DATABASE" ] || [ -z "$DB_USERNAME" ] || [ -z "$DB_PASSWORD" ]; then
+              echo "Missing required DB_* values in .env (DB_DATABASE, DB_USERNAME, DB_PASSWORD)."
+              exit 1
+            fi
 
             export DB_DATABASE DB_USERNAME DB_PASSWORD DB_ROOT_PASSWORD
 
