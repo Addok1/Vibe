@@ -42,6 +42,13 @@ Homestead.json
 Homestead.yaml
 auth.json
 
+# Mobile artifacts (if added later)
+android
+ios
+pubspec.yaml
+*.apk
+*.aab
+
 # OS
 .DS_Store
 Thumbs.db

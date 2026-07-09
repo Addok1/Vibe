@@ -1,26 +1,5 @@
 # =============================================================================
-# Stage 1: Build frontend assets (Vite + Vue)
-# =============================================================================
-FROM node:20-alpine AS frontend
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN if [ -f package-lock.json ]; then \
-      npm ci --ignore-scripts; \
-    else \
-      npm install --ignore-scripts; \
-    fi
-
-COPY vite.config.js ./
-COPY resources ./resources
-COPY public ./public
-
-RUN npm run build
-
-
-# =============================================================================
-# Stage 2: Install PHP dependencies
+# Stage 1: Install PHP dependencies
 # =============================================================================
 FROM php:8.4-cli-alpine AS vendor
 
@@ -87,7 +66,8 @@ WORKDIR /var/www/html
 
 COPY --chown=www-data:www-data . .
 COPY --from=vendor --chown=www-data:www-data /app/vendor ./vendor
-COPY --from=frontend --chown=www-data:www-data /app/public/build ./public/build
+# Frontend build is produced before deploy (GitHub workflow), not inside Docker.
+COPY --chown=www-data:www-data public/build ./public/build
 
 COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh \

@@ -324,20 +324,6 @@ const buildFinalHtml = () => {
         margin: 0 !important;
         padding: 0 !important;
       }
-      @import url("https://unpkg.com/grapesjs/dist/css/grapes.min.css");
-      
-      .gjs-wrapper{ width:100%; min-height:700px; }
-      #gjs{ height:700px !important; background:#fff !important; border:1px solid #ddd !important; overflow:auto !important;}
-      .gjs-pn *{ font-size:12px !important; }
-      .gjs-block{ max-width:220px !important; }
-      .gjs-block img{ width:auto !important; height:auto !important; max-width:100% !important; }
-      .gjs-blocks-c .gjs-block svg, .gjs-pn-panel svg { width:34px !important; height:34px !important; }
-      .gjs-cv-canvas{ background-color:#fff !important; }
-      
-      
-      /* Now reapply GJS styles */
-      @import url("https://unpkg.com/grapesjs/dist/css/grapes.min.css");
-      
       #builder-container #gjs {
         height: 700px !important;
         background: #fff !important;
