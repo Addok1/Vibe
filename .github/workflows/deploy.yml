@@ -233,7 +233,10 @@ jobs:
 
             NGINX_SITE="/etc/nginx/sites-available/viberidegh.online"
             CERT_PATH="/etc/letsencrypt/live/${APP_HOST}/fullchain.pem"
-            SSL_EMAIL='${{ secrets.SSL_EMAIL }}'
+            SSL_EMAIL="$(read_env SSL_EMAIL)"
+            if [ -z "${SSL_EMAIL}" ]; then
+              SSL_EMAIL='${{ secrets.SSL_EMAIL }}'
+            fi
 
             sudo cp deploy/nginx-viverider.conf "${NGINX_SITE}"
             sudo ln -sf "${NGINX_SITE}" /etc/nginx/sites-enabled/viberidegh.online
@@ -275,6 +278,28 @@ jobs:
                 echo 'SESSION_SECURE_COOKIE=false' >> .env
               fi
               APP_URL="$(read_env APP_URL)"
+            fi
+
+            sudo ln -sf "${NGINX_SITE}" /etc/nginx/sites-enabled/viberidegh.online
+            sudo rm -f /etc/nginx/sites-enabled/default
+            sudo nginx -t
+
+            if command -v ufw >/dev/null 2>&1 && sudo ufw status 2>/dev/null | grep -qi "Status: active"; then
+              echo "Opening firewall for HTTP/HTTPS..."
+              sudo ufw allow 'Nginx Full' 2>/dev/null || { sudo ufw allow 80/tcp; sudo ufw allow 443/tcp; }
+            fi
+
+            sudo systemctl reload nginx
+
+            if [ -f "${CERT_PATH}" ]; then
+              if ss -tln 2>/dev/null | grep -q ':443 '; then
+                echo "Port 443 is listening."
+              else
+                echo "WARNING: SSL cert exists but port 443 is not listening. Check nginx error log."
+                sudo nginx -t || true
+              fi
+            else
+              echo "HTTPS not enabled yet. Ensure GitHub secret SSL_EMAIL or .env.prod SSL_EMAIL is set, and EC2 Security Group allows inbound TCP 443."
             fi
 
             sudo -u www-data php artisan config:cache

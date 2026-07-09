@@ -1,0 +1,31 @@
+name: Setup SSL
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ssl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable HTTPS on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH }}
+          script: |
+            set -euo pipefail
+            cd /var/www/viverider
+            read_env() {
+              grep -E "^${1}=" .env 2>/dev/null | head -n1 | cut -d= -f2- | sed 's/^"\(.*\)"$/\1/' | sed "s/^'\(.*\)'$/\1/" | tr -d '\r' || true
+            }
+            EMAIL="$(read_env SSL_EMAIL)"
+            if [ -z "${EMAIL}" ]; then
+              EMAIL='${{ secrets.SSL_EMAIL }}'
+            fi
+            if [ -z "${EMAIL}" ]; then
+              EMAIL="admin@viberidegh.online"
+            fi
+            export SSL_EMAIL="${EMAIL}"
+            sudo bash deploy/setup-ssl.sh viberidegh.online
+            curl -kfs -o /dev/null -w "https:%{http_code}\n" https://127.0.0.1/ -H "Host: viberidegh.online" || true

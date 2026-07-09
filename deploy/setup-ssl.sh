@@ -38,6 +38,10 @@ sudo cp deploy/nginx-viberidegh.ssl.conf /etc/nginx/sites-available/viberidegh.o
 sudo nginx -t
 sudo systemctl reload nginx
 
+if command -v ufw >/dev/null 2>&1 && sudo ufw status 2>/dev/null | grep -qi "Status: active"; then
+  sudo ufw allow 'Nginx Full' 2>/dev/null || { sudo ufw allow 80/tcp; sudo ufw allow 443/tcp; }
+fi
+
 if [ -f .env ]; then
   sudo sed -i "s|^APP_URL=.*|APP_URL=https://${DOMAIN}|" .env
   if grep -q '^SESSION_SECURE_COOKIE=' .env; then
