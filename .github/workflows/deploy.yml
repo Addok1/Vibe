@@ -14,19 +14,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: mbstring, bcmath, intl, gd, pdo_mysql, zip, curl, xml, exif, pcntl
+          tools: composer:v2
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Build frontend assets
+      - name: Install dependencies and build
         run: |
+          composer install --no-dev --optimize-autoloader --no-interaction
           if [ -f package-lock.json ]; then
             npm ci --ignore-scripts
           else
             npm install --ignore-scripts
           fi
           npm run build
+          rm -rf node_modules
 
       - name: Clean server directory
         uses: appleboy/ssh-action@v1.0.3
@@ -52,7 +61,7 @@ jobs:
           target: "/var/www/viverider"
           overwrite: true
 
-      - name: Run Docker on server
+      - name: Deploy on server (no Docker)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
@@ -60,24 +69,20 @@ jobs:
           key: ${{ secrets.SSH }}
           script: |
             set -euxo pipefail
-            sudo chown -R $USER:$USER /var/www/viverider
             cd /var/www/viverider
-            ls -la
 
-            APP_DIR=""
-            for d in "/var/www/viverider" "/var/www/viverider/website" "/var/www/viverider/viverider"; do
-              if [ -f "$d/docker-compose.yml" ] && [ -f "$d/Dockerfile" ] && [ -f "$d/package.json" ]; then
-                APP_DIR="$d"
-                break
-              fi
-            done
-
-            if [ -z "$APP_DIR" ]; then
-              echo "App root not found (docker-compose.yml/Dockerfile/package.json)."
-              exit 1
-            fi
-
-            cd "$APP_DIR"
             printf "%s" '${{ secrets.SERVER_ENV }}' > .env
-            APP_PORT=9000 MYSQL_PORT=3306 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-            APP_PORT=9000 MYSQL_PORT=3306 docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+
+            php artisan storage:link --force 2>/dev/null || true
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            sudo chown -R www-data:www-data storage bootstrap/cache
+            sudo chmod -R 775 storage bootstrap/cache
+
+            sudo systemctl reload php8.3-fpm 2>/dev/null || sudo systemctl reload php8.4-fpm || true
+            sudo systemctl reload nginx
+
+            echo "Deploy complete: http://viverider.online"
