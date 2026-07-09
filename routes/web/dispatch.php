@@ -1,0 +1,55 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\DispatcherController;
+use App\Http\Controllers\Web\Admin\DispatcherCreateRequestController;
+use App\Http\Controllers\Api\V1\Request\EtaController;
+use App\Http\Controllers\ComplaintController;
+use App\Http\Controllers\Api\V1\Request\PromoCodeController;
+
+Route::middleware(['auth:sanctum', config('jetstream.auth_session')])->group(function () {
+
+
+    Route::group(['prefix' => 'dispatcher'], function () {
+        // Route::get('/', [DispatcherController::class, 'index'])->name('dispatch.dashboard');
+        Route::middleware(['permission:dispatcher-drivers'])->get('/godeye', [DispatcherController::class, 'godseye'])->name('dispatch.godeye');
+        Route::middleware(['permission:dispatcher-ride'])->get('/bookride', [DispatcherController::class, 'bookride'])->name('dispatch.dashboard');
+        Route::get('/advanced', [DispatcherController::class, 'advanced'])->name('dispatch.advanced');
+
+        //ride request
+        Route::middleware(['permission:dispatcher-ride-request-view'])->get('/rides_request', [DispatcherController::class, 'rideRequest'])->name('dispatch.rideRequest');
+        Route::get('/rides_request/list', [DispatcherController::class, 'list'])->name('dispatch.rideRequest.list');
+        Route::post('/rides_request/driver/{driver}', [DispatcherController::class, 'driverFind'])->name('dispatch.triprequest.driverFind');
+        Route::middleware(['permission:dispatcher-ride-request-view'])->get('/rides_request/view/{requestmodel}', [DispatcherController::class, 'viewDetails'])->name('dispatch.triprequest.viewDetails');
+        Route::get('/rides_request/cancel/{requestmodel}', [DispatcherController::class, 'cancelRide'])->name('dispatch.triprequest.cancel');
+        Route::get('/rides_request/download-invoice/{requestmodel}', [DispatcherController::class, 'downloadInvoice']);
+
+        Route::middleware(['permission:dispatcher-ongoing-request-view'])->get('/ongoing_request', [DispatcherController::class, 'ongoingRequest'])->name('dispatch.dispatch.ongoingRequest');
+        Route::get('/ongoing_request/find-ride/{request}', [DispatcherController::class, 'ongoingRideDetail'])->name('dispatch.dispatch.ongoingRideDetail');
+        Route::middleware(['permission:dispatcher-ride-request-assign'])->get('/ongoing_request/assign/{request}', [DispatcherController::class, 'assignView'])->name('dispatch.dispatch.assignView');
+        Route::post('/ongoing_request/assign-driver/{requestmodel}', [DispatcherController::class, 'assignDriver'])->name('dispatch.dispatch.assignDriver');
+
+        //  delivery ride request
+        Route::group(['prefix' => 'delivery-rides-request'], function () {
+            Route::middleware(['permission:dispatcher-delivery-request'])->get('/', [DispatcherController::class, 'ridesRequest'])->name('dispatch.ridesRequest');
+            Route::middleware('remove_empty_query')->get('/list', [DispatcherController::class, 'deliveryList'])->name('dispatch.list');
+        });
+    });
+});
+
+Route::group(['prefix' => 'dispatch'], function () {
+    Route::get('/', [DispatcherController::class, 'bookingRequest'])->name('dispatch.index');
+    Route::post('/create-request', [DispatcherCreateRequestController::class, 'createRequest']);
+    Route::middleware('auth:sanctum')->post('request/eta', [EtaController::class, 'eta']);
+    Route::post('request/list_packages', [EtaController::class, 'listPackages']);
+    Route::post('serviceVerify', [EtaController::class, 'serviceVerify']);
+    Route::get('/dispatchLocations', [DispatcherCreateRequestController::class, 'dispatchLocations']);
+    
+    Route::get('promocode-list', [PromoCodeController::class, 'index']);
+    Route::post('promocode-redeem', [PromoCodeController::class, 'redeem']);
+    Route::post('promocode-clear', [PromoCodeController::class, 'clear']);
+
+    // Route::get('/request-complaint', [ComplaintController::class, 'userRequestComplaint'])->name('dispatch.userRequestComplaint');
+
+    Route::get('fetch-user-detail', [DispatcherController::class, 'fetchUserIfExists']);
+});

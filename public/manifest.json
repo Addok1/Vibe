@@ -1,0 +1,18 @@
+{
+  "name": "Admin Panel",
+  "short_name": "Admin",
+  "description": "Transport & ride-hailing admin panel and web booking",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0ab39c",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/image/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+    "money_deposited_by_admin" : "Money Deposited By Admin",
+    "money_deposited":"Money Deposited",
+    "admin_commission_for_trip":"Admin Commission For Trip",
+    "trip_commission":"Trip Commission",
+    "cancellation_Fee":"Cancellation Fee",
+    "referral_commission":"Referral Commission",
+    "spent_for_trip_rRequest":"Spent For Trip Request",
+    "withdrawn_from_wallet":"Withdrawn From Wallet",
+    "daily_incentive_amount":"Daily Incentive Amount",
+    "weekly_incentive_amount":"Weekly Incentive Amount",
+    "subscription_fee":"Subscription fee",
+    "driver_level_Up_bonus_reward":"Driver Level Up Bonus Reward",
+    "driver_level_up_reward":"Driver Level Up Reward",
+    "discounted_amount_for_trip":"Discounted Amount For Trip"
+
+}

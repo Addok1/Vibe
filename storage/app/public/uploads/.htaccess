@@ -1,0 +1,4 @@
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_URI} ^/storage/uploads/ [NC]
+    RewriteRule ^ - [L]
+</IfModule>

@@ -1,0 +1,15 @@
+# =============================================================================
+# Production overrides for AWS EC2
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# =============================================================================
+
+services:
+  app:
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      LOG_LEVEL: error
+
+  mysql:
+    ports: []   # do not expose MySQL publicly on production

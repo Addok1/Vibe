@@ -1,0 +1,16 @@
+{
+    "money_deposited_by_admin": "Dinero depositado por el administrador",
+    "money_deposited": "Saldo recargado correctamente",
+    "admin_commission_for_trip": "Comisión Administrativa para Viaje",
+    "trip_commission": "Comisión de viaje",
+    "cancellation_Fee": "Tarifa de cancelación",
+    "referral_commission": "Comisión de referencia",
+    "spent_for_trip_rRequest": "Gastado para solicitud de viaje",
+    "withdrawn_from_wallet": "Retirado de la billetera",
+    "daily_incentive_amount": "Monto del incentivo diario",
+    "weekly_incentive_amount": "Monto del incentivo semanal",
+    "subscription_fee": "Tarifa de suscripción",
+    "driver_level_Up_bonus_reward": "Bonificación por subir de nivel al conductor",
+    "driver_level_up_reward": "Recompensa por subir de nivel al conductor",
+    "discounted_amount_for_trip": "Monto con descuento para el viaje"
+}

@@ -1,0 +1,20 @@
+{
+    "money_deposited_by_admin": "Solde recharg\u00e9 avec succ\u00e8s",
+    "money_deposited": "Solde recharg\u00e9 avec succ\u00e8s",
+    "admin_commission_for_trip": "Commission administrative pour le voyage",
+    "trip_commission": "Commission de voyage",
+    "cancellation_Fee": "Frais d\u2019annulation",
+    "referral_commission": "Commission de r\u00e9f\u00e9rence",
+    "spent_for_trip_rRequest": "D\u00e9penses pour la demande de voyage",
+    "withdrawn_from_wallet": "Retir\u00e9 du portefeuille",
+    "daily_incentive_amount": "Montant de l&#39;incitation quotidienne",
+    "weekly_incentive_amount": "Montant de la prime hebdomadaire",
+    "subscription_fee": "Frais d\u2019abonnement",
+    "driver_level_Up_bonus_reward": "R\u00e9compense bonus pour la mont\u00e9e en niveau du conducteur",
+    "driver_level_up_reward": "R\u00e9compense pour la mont\u00e9e en niveau du conducteur",
+    "discounted_amount_for_trip": "Montant r\u00e9duit pour le voyage",
+    "user_cancellation_fee": "Frais d\u2019annulation utilisateur",
+    "additional_charge_amount": "Montant des frais suppl\u00e9mentaires",
+    "agent_commission_for_trip": "Commission de l&#39;agent pour le voyage",
+    "franchise_commision_for_trip": "Commission de franchise pour le voyage"
+}
