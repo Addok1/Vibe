@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Promotion\PromotionTemplate;
-use Illuminate\Support\Facades\Storage;
 
 class PromotionTemplateImageService
 {
@@ -24,6 +23,6 @@ class PromotionTemplateImageService
             'preview_image' => $imagePath
         ]);
 
-        return Storage::url($imagePath);
+        return storage_public_url($imagePath);
     }
 }

@@ -69,6 +69,6 @@ class BannerImageModel extends Model
             return null;
         }
 
-        return asset('storage/uploads/banner/banner-preview/' . $this->previewimage);
+        return storage_public_url($this->previewimage, 'uploads/banner/banner-preview');
     }
 }

@@ -25,7 +25,7 @@ class FleetDocument extends Model
 
         // return Storage::disk(env('FILESYSTEM_DRIVER'))->url(file_path($this->uploadPath(), $value));
         $relativePath = file_path($this->uploadPath(), $value);
-        return url('storage/' . $relativePath);
+        return storage_public_url($relativePath);
     }
     /**
     * The Document that the FleetNeededDocument belongs to.
@@ -47,7 +47,7 @@ class FleetDocument extends Model
             return null;
         }
         $relativePath = file_path($this->uploadPath(), $value);
-        return url('storage/' . $relativePath);
+        return storage_public_url($relativePath);
         // return Storage::disk(env('FILESYSTEM_DRIVER'))->url(file_path($this->uploadPath(), $value));
     }    
     public function uploadPath()

@@ -356,7 +356,7 @@ class LandingDriverController extends BaseController
          //     // Construct URLs for each image column
                  foreach ($imageColumns as $column) {
                      if ($landingDriver && $landingDriver->$column) {
-                         $landingDriver->{$column . '_url'} = asset('storage/uploads/website/images/' . $landingDriver->$column);
+                         $landingDriver->{$column . '_url'} = storage_public_url($landingDriver->$column, 'uploads/website/images');
                      } else {
                          $landingDriver->{$column . '_url'} = null;
                      }

@@ -41,7 +41,7 @@ class AppServiceProvider extends ServiceProvider
             'app_for' => env('APP_FOR')
         ]);
 
-        if (str_starts_with((string) config('app.url'), 'https://')) {
+        if (app()->environment('production') && str_starts_with((string) config('app.url'), 'https://')) {
             URL::forceScheme('https');
         }
         
@@ -180,13 +180,13 @@ class AppServiceProvider extends ServiceProvider
             view()->share('dispatcher_sidebar_txt_color', $v('dispatcher_sidebar_txt_color'));
 
             $logoVal = $v('logo');
-            view()->share('logo', !empty($logoVal) ? asset('storage/uploads/system-admin/logo/' . $logoVal) : asset('storage/uploads/system-admin/logo/rest.png'));
+            view()->share('logo', !empty($logoVal) ? storage_public_url($logoVal, 'uploads/system-admin/logo') : storage_public_url('rest.png', 'uploads/system-admin/logo'));
             $faviconVal = $v('favicon');
-            view()->share('favicon', !empty($faviconVal) ? asset('storage/uploads/system-admin/logo/' . $faviconVal) : asset('storage/uploads/system-admin/logo/Restart user.jpg'));
+            view()->share('favicon', !empty($faviconVal) ? storage_public_url($faviconVal, 'uploads/system-admin/logo') : storage_public_url('Restart user.jpg', 'uploads/system-admin/logo'));
             $loginbgVal = $v('loginbg');
-            view()->share('loginbg', !empty($loginbgVal) ? asset('storage/uploads/system-admin/logo/' . $loginbgVal) : asset('storage/uploads/system-admin/logo/workspace.jpg'));
+            view()->share('loginbg', !empty($loginbgVal) ? storage_public_url($loginbgVal, 'uploads/system-admin/logo') : storage_public_url('workspace.jpg', 'uploads/system-admin/logo'));
             $ownerLoginbgVal = $v('owner_loginbg');
-            view()->share('owner_loginbg', !empty($ownerLoginbgVal) ? asset('storage/uploads/system-admin/logo/' . $ownerLoginbgVal) : asset('storage/uploads/system-admin/logo/workspace.jpg')); 
+            view()->share('owner_loginbg', !empty($ownerLoginbgVal) ? storage_public_url($ownerLoginbgVal, 'uploads/system-admin/logo') : storage_public_url('workspace.jpg', 'uploads/system-admin/logo')); 
         } else {
 
             view()->share('navs', "#0ab39c");
@@ -208,9 +208,9 @@ class AppServiceProvider extends ServiceProvider
             view()->share('single_landing_footer_bg_color', "#101435");
             view()->share('single_landing_footer_text_color', "#f1ffff");
 
-            view()->share('logo', asset('storage/uploads/system-admin/logo/rest.png'));
-            view()->share('favicon',asset('storage/uploads/system-admin/logo/Restart user.jpg'));
-            view()->share('loginbg', asset('storage/uploads/system-admin/logo/workspace.jpg'));
+            view()->share('logo', storage_public_url('rest.png', 'uploads/system-admin/logo'));
+            view()->share('favicon', storage_public_url('Restart user.jpg', 'uploads/system-admin/logo'));
+            view()->share('loginbg', storage_public_url('workspace.jpg', 'uploads/system-admin/logo'));
         }
 
 
@@ -218,8 +218,8 @@ class AppServiceProvider extends ServiceProvider
             // $headers = LandingHeader::all();
             $headerSettings = Schema::hasTable('settings') ? Setting::getCached() : [];
             $headers = LandingHeader::all()->map(function ($header) use ($headerSettings) {
-                $header->header_logo_url = asset('storage/uploads/website/images/' . $header->header_logo);
-                $header->footer_logo_url = asset('storage/uploads/website/images/' . $header->footer_logo);
+                $header->header_logo_url = storage_public_url($header->header_logo, 'uploads/website/images');
+                $header->footer_logo_url = storage_public_url($header->footer_logo, 'uploads/website/images');
                 $header->enable_web_booking = !empty($headerSettings['enable_web_booking_feature']) ? 1 : 0;
                 $header->userlogin = 'login/' . ($headerSettings['user_login'] ?? 'user');
                 return $header;
@@ -232,8 +232,8 @@ class AppServiceProvider extends ServiceProvider
             // $headers = LandingHeader::all();
             $headerSettings = Schema::hasTable('settings') ? Setting::getCached() : [];
             $headers = SingleLandingHeader::all()->map(function ($header) use ($headerSettings) {
-                $header->header_logo_url = asset('storage/uploads/website/images/' . $header->header_logo);
-                $header->footer_logo_url = asset('storage/uploads/website/images/' . $header->footer_logo);
+                $header->header_logo_url = storage_public_url($header->header_logo, 'uploads/website/images');
+                $header->footer_logo_url = storage_public_url($header->footer_logo, 'uploads/website/images');
                 $header->enable_web_booking = !empty($headerSettings['enable_web_booking_feature']) ? 1 : 0;
                 $header->userlogin = 'login/' . ($headerSettings['user_login'] ?? 'user');
                 return $header;
@@ -246,14 +246,14 @@ class AppServiceProvider extends ServiceProvider
             $defaultHeaders = collect([
                 'id' => '1',
                 'header_logo' => 'rest.png',
-                'header_logo_url' => asset('storage/uploads/website/images/rest.png'),
+                'header_logo_url' => storage_public_url('rest.png', 'uploads/website/images'),
                 'home' => 'Home',
                 'driver' => 'Driver',
                 'user' => 'User',
                 'contact' => 'Contact',                
                 'book_now_btn' => 'Book Now',
                 'footer_logo' => 'rest.png',
-                'footer_logo_url' => asset('storage/uploads/website/images/rest.png'),
+                'footer_logo_url' => storage_public_url('rest.png', 'uploads/website/images'),
                 'footer_para' => 'Tagxi is a rideshare platform facilitating peer to peer ridesharing by means of connecting passengers who are in need of rides from drivers with available cars to get from point A to point B with the press of a button.',
                 'quick_links' => 'Quick Links',
                 'compliance' => 'Compliance',
@@ -270,7 +270,7 @@ class AppServiceProvider extends ServiceProvider
                 'driver_play_link' => 'misoftwares.in',
                 'driver_apple' => 'Apple Store',
                 'driver_apple_link' => 'misoftwares.in',
-                'copy_rights' => '2021 @ Misoftwares',
+                'copy_rights' => '2026 @ viberidegh',
                 'fb_link' => 'fb.com',
                 'linkdin_link' => 'linkdin.com',
                 'x_link' => 'x.com',

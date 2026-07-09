@@ -323,7 +323,7 @@ class LandingHomeController extends BaseController
     //     // Construct URLs for each image column
             foreach ($imageColumns as $column) {
                 if ($singlelandingpage && $singlelandingpage->$column) {
-                    $singlelandingpage->{$column . '_url'} = asset('storage/uploads/website/images/' . $singlelandingpage->$column);
+                    $singlelandingpage->{$column . '_url'} = storage_public_url($singlelandingpage->$column, 'uploads/website/images');
                 } elseif ($singlelandingpage) {
                     $singlelandingpage->{$column . '_url'} = null;
                 }
@@ -381,7 +381,7 @@ class LandingHomeController extends BaseController
     //     // Construct URLs for each image column
             foreach ($imageColumns as $column) {
                 if ($landingHome && $landingHome->$column) {
-                    $landingHome->{$column . '_url'} = asset('storage/uploads/website/images/' . $landingHome->$column);
+                    $landingHome->{$column . '_url'} = storage_public_url($landingHome->$column, 'uploads/website/images');
                 } elseif ($landingHome) {
                     $landingHome->{$column . '_url'} = null;
                 }

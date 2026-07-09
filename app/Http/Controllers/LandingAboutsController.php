@@ -323,7 +323,7 @@ class LandingAboutsController extends BaseController
          //     // Construct URLs for each image column
                  foreach ($imageColumns as $column) {
                      if ($landingAbouts && $landingAbouts->$column) {
-                         $landingAbouts->{$column . '_url'} = asset('storage/uploads/website/images/' . $landingAbouts->$column);
+                         $landingAbouts->{$column . '_url'} = storage_public_url($landingAbouts->$column, 'uploads/website/images');
                      } else {
                          $landingAbouts->{$column . '_url'} = null;
                      }

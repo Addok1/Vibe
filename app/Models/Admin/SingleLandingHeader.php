@@ -76,14 +76,14 @@ class SingleLandingHeader extends Model
         public function getHeaderLogoUrlAttribute()
     {
         return $this->header_logo
-            ? asset('storage/uploads/website/images/' . $this->header_logo)
+            ? storage_public_url($this->header_logo, 'uploads/website/images')
             : null;
     }
 
     public function getFooterLogoUrlAttribute()
     {
         return $this->footer_logo
-            ? asset('storage/uploads/website/images/' . $this->footer_logo)
+            ? storage_public_url($this->footer_logo, 'uploads/website/images')
             : null;
     }
 

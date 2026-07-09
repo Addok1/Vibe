@@ -1688,3 +1688,36 @@ if (!function_exists('haversineDistance')) {
         return $earthRadius * $c;
     }
 }
+
+if (!function_exists('storage_public_url')) {
+    /**
+     * Same-origin URL for files in storage/app/public (web path: /storage/...).
+     * Relative paths work on localhost and production without APP_URL / HTTP(S) mismatch.
+     */
+    function storage_public_url(?string $file, string $directory = 'uploads'): ?string
+    {
+        if ($file === null || $file === '') {
+            return null;
+        }
+
+        $file = trim($file);
+        if ($file === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $file)) {
+            return $file;
+        }
+
+        $relative = ltrim($file, '/');
+        $relative = preg_replace('#^(storage/app/public/|app/public/|storage/)#', '', $relative) ?? $relative;
+
+        if (!str_starts_with($relative, 'uploads/')) {
+            if (!str_contains($relative, '/')) {
+                $relative = rtrim($directory, '/') . '/' . ltrim($relative, '/');
+            }
+        }
+
+        return '/storage/' . $relative;
+    }
+}

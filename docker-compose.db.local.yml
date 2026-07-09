@@ -1,0 +1,5 @@
+# Local override: avoid conflict with host MySQL on port 3306
+services:
+  mysql:
+    ports:
+      - "3308:3306"

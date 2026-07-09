@@ -39,7 +39,7 @@ class PromotionController extends Controller
 
             $results->getCollection()->transform(function ($item) {
                 $item->preview_image_url = $item->preview_image
-                    ? asset('storage/' . $item->preview_image)
+                    ? storage_public_url($item->preview_image)
                     : null;
                 return $item;
             });

@@ -227,7 +227,7 @@ class UserWebBookingController extends Controller
 
                 return response()->json([
                     'id' => $user->id,
-                    'profile_picture' => asset('storage/uploads/user/profile-picture/' . $user->profile_picture), // Ensure this returns the full URL
+                    'profile_picture' => storage_public_url($user->profile_picture, 'uploads/user/profile-picture'),
                 ]);
             }
 

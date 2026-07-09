@@ -590,7 +590,7 @@ class TripRequestController extends StripeController
                     return response()->json([
                         'success' => true,
                         'message' => 'Invoice Downloaded Successfully',
-                        'invoice_url' => asset("storage/invoices/$fileName"),
+                        'invoice_url' => storage_public_url("invoices/$fileName", ''),
                     ]);
 
                 }
@@ -614,7 +614,7 @@ class TripRequestController extends StripeController
                     return response()->json([
                         'success' => true,
                         'message' => 'Invoice Downloaded Successfully',
-                        'invoice_url' => asset("storage/invoices/$fileName"),
+                        'invoice_url' => storage_public_url("invoices/$fileName", ''),
                     ]);
 
                 }

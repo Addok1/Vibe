@@ -12,7 +12,7 @@ class PromotionTemplateTransformer extends TransformerAbstract
         return [
             'subject'       => $template->subject,
             'preview_image' => $template->preview_image
-            ? asset('storage/uploads/promotion/previews/' . $template->preview_image)
+            ? storage_public_url($template->preview_image, 'uploads/promotion/previews')
             : null,
 
             'from'          => optional($template->from)->format('Y-m-d H:i:s'),

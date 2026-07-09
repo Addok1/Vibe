@@ -40,7 +40,7 @@ class SupportTicketMultiFile extends Model
 
         // return Storage::disk(env('FILESYSTEM_DRIVER'))->url(file_path($this->uploadPath(), $value));
         $relativePath = file_path($this->uploadPath(), $this->image_name);
-        return url('storage/' . $relativePath);
+        return storage_public_url($relativePath);
     }
        /**
      * The default file upload path.

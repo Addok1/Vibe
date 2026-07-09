@@ -293,7 +293,7 @@ class LandingUserController extends BaseController
          // // Construct URLs for each image column
                  foreach ($imageColumns as $column) {
                      if ($landingUser && $landingUser->$column) {
-                         $landingUser->{$column . '_url'} = asset('storage/uploads/website/images/' . $landingUser->$column);
+                         $landingUser->{$column . '_url'} = storage_public_url($landingUser->$column, 'uploads/website/images');
                      } else {
                          $landingUser->{$column . '_url'} = null;
                      }

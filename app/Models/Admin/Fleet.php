@@ -49,7 +49,7 @@ class Fleet extends Model
     }
 
     public function getQrCodeImageAttribute(){
-        return asset('storage/uploads/qr-codes/'.$this->qr_image);
+        return storage_public_url($this->qr_image, 'uploads/qr-codes');
     }
 
     public function user(){
@@ -59,7 +59,7 @@ class Fleet extends Model
     public function uploadPath()
     {
         // Assuming $this->image1 contains the filename of the uploaded image
-        return asset('storage/app/public/uploads/fleets/images/' . $this->image1);
+        return storage_public_url($this->image1, 'uploads/fleets/images');
     }
 
     public function getIconAttribute()
