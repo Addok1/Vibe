@@ -46,11 +46,10 @@ jobs:
           key: ${{ secrets.SSH }}
           script: |
             set -e
-            if [ -f /var/www/viverider/website/docker-compose.yml ]; then
-              cd /var/www/viverider/website
-            else
-              cd /var/www/viverider
-            fi
+            cd /var/www/viverider
+            test -f docker-compose.yml
+            test -f Dockerfile
+            test -f package-lock.json
             printf "%s" '${{ secrets.SERVER_ENV }}' > .env
             sudo chown -R $USER:$USER /var/www/viverider
-            HTTP_PORT=80 HTTPS_PORT=443 MYSQL_PORT=3306 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+            APP_PORT=80 MYSQL_PORT=3306 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
