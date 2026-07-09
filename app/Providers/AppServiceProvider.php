@@ -12,6 +12,7 @@ use App\Models\Admin\LandingHome;
 use Illuminate\Support\Facades\View;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Kreait\Firebase\Factory as Firebase;
 use App\Models\ThirdPartySetting;
 use Inertia\Inertia;
@@ -39,6 +40,10 @@ class AppServiceProvider extends ServiceProvider
         Inertia::share([
             'app_for' => env('APP_FOR')
         ]);
+
+        if (str_starts_with((string) config('app.url'), 'https://')) {
+            URL::forceScheme('https');
+        }
         
         $this->validator = $validator;
 
