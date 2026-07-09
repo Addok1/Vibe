@@ -21,30 +21,33 @@ jobs:
           php-version: "8.4"
           extensions: mbstring, bcmath, intl, gd, pdo_mysql, zip, curl, xml, exif, pcntl
           tools: composer:v2
-          cache: composer
 
-      - name: Cache vendor
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer dependencies
         uses: actions/cache@v4
         with:
-          path: vendor
-          key: ${{ runner.os }}-php84-vendor-${{ hashFiles('composer.lock') }}
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
           restore-keys: |
-            ${{ runner.os }}-php84-vendor-
+            ${{ runner.os }}-composer-
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Cache npm
+      - name: Cache npm dependencies
         uses: actions/cache@v4
         with:
           path: |
             ~/.npm
             node_modules
-          key: ${{ runner.os }}-node20-npm-${{ hashFiles('package.json') }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('package.json') }}
           restore-keys: |
-            ${{ runner.os }}-node20-npm-
+            ${{ runner.os }}-npm-
 
       - name: Install dependencies and build
         run: |
