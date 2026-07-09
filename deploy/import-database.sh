@@ -35,4 +35,6 @@ SELECT COUNT(*) AS single_landing FROM single_landing_page;
 sudo -u www-data php artisan migrate --force
 sudo -u www-data php artisan config:cache
 
-echo "Done."
+sudo touch /var/www/.viverider-db-seeded
+
+echo "Done. Seed lock: /var/www/.viverider-db-seeded"
