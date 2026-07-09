@@ -30,12 +30,30 @@ const submit = async () => {
             router.get('/dashboard');
         }
     } catch (error) {
-        if (error.response?.status === 422) {
-            form.setError('email', error.response.data.errors.email?.[0] || '');
-            form.setError('password', error.response.data.errors.password?.[0] || '');
+        const res = error.response;
+        if (res?.status === 422 && res.data?.errors) {
+            const errors = res.data.errors;
+            form.setError('email', errors.email?.[0] || '');
+            form.setError('password', errors.password?.[0] || '');
+            if (!errors.email?.[0] && !errors.password?.[0]) {
+                const firstError = Object.values(errors).flat()[0];
+                if (firstError) {
+                    form.setError('email', firstError);
+                }
+            }
+        } else if (res?.status === 419) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Session expired',
+                text: 'Please refresh the page and try again.',
+            });
         } else {
-            alert('The given data failed to pass validation.');
-            console.error('Unexpected error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Login failed',
+                text: res?.data?.message || 'Unable to sign in. Please try again.',
+            });
+            console.error('Login error:', error);
         }
     }
 };

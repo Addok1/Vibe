@@ -39,9 +39,9 @@ trait ExceptionHelpers
      * @throws CustomValidationException
      * @throws Exception
      */
-    protected function throwAccountMobileNotFoundException($field = null)
+    protected function throwAccountMobileNotFoundException($field = 'email')
     {
-         $this->throwCustomException('Mobile number not found.', $field);
+         $this->throwCustomException('These credentials do not match our records.', $field);
     }
 
       /**
@@ -51,7 +51,7 @@ trait ExceptionHelpers
      * @throws CustomValidationException
      * @throws Exception
      */
-    protected function throwAccountPasswordWrongException($field = null)
+    protected function throwAccountPasswordWrongException($field = 'password')
     {
        $this->throwCustomException('Incorrect password.', $field);
     }
@@ -62,7 +62,7 @@ trait ExceptionHelpers
      * @throws CustomValidationException
      * @throws Exception
      */
-    protected function throwAccountDisabledException($field = null)
+    protected function throwAccountDisabledException($field = 'email')
     {
         $this->throwCustomException('The account has been disabled.', $field);
     }
