@@ -20,4 +20,14 @@ class AdminLoginRequest extends BaseRequest
 
         ];
     }
+
+    public function messages()
+    {
+        return [
+            'email.exists' => 'No account found with this email address.',
+            'email.required' => 'Email is required.',
+            'email.email' => 'Please enter a valid email address.',
+            'password.required' => 'Password is required.',
+        ];
+    }
 }

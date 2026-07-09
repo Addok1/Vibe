@@ -119,6 +119,11 @@ class Handler extends ExceptionHandler
             $data['status_code'] = $statusCode = Response::HTTP_UNPROCESSABLE_ENTITY;
             $data['errors'] = $exception instanceof ValidationException ?
             $exception->validator->errors()->getMessages() : $exception->getMessages();
+
+            $firstFieldError = collect($data['errors'])->flatten()->filter()->first();
+            if ($firstFieldError) {
+                $data['message'] = $firstFieldError;
+            }
         }
 
         if ($code = $exception->getCode()) {

@@ -22,39 +22,87 @@ const form = useForm({
 const page = usePage()
 const appFor = page.props.app_for
 
+const genericValidationMessage = 'The given data failed to pass validation.';
+
+const extractErrorText = (res) => {
+    const errors = res?.data?.errors;
+    if (errors && typeof errors === 'object') {
+        const messages = Object.values(errors).flat().filter(Boolean);
+        if (messages.length) {
+            return messages[0];
+        }
+    }
+
+    const message = res?.data?.message;
+    if (message && message !== genericValidationMessage) {
+        return message;
+    }
+
+    return null;
+};
+
+const applyFieldErrors = (res) => {
+    const errors = res?.data?.errors ?? {};
+    form.setError('email', errors.email?.[0] ?? '');
+    form.setError('password', errors.password?.[0] ?? '');
+
+    if (!errors.email?.[0] && !errors.password?.[0]) {
+        const fallback = extractErrorText(res);
+        if (fallback) {
+            form.setError('email', fallback);
+        }
+    }
+};
+
 const submit = async () => {
     form.clearErrors();
     try {
-        const response = await axios.post('/admin-login', form.data());
+        const response = await axios.post('/admin-login', form.data(), {
+            headers: { Accept: 'application/json' },
+        });
         if (response.status === 200) {
             router.get('/dashboard');
         }
     } catch (error) {
         const res = error.response;
-        if (res?.status === 422 && res.data?.errors) {
-            const errors = res.data.errors;
-            form.setError('email', errors.email?.[0] || '');
-            form.setError('password', errors.password?.[0] || '');
-            if (!errors.email?.[0] && !errors.password?.[0]) {
-                const firstError = Object.values(errors).flat()[0];
-                if (firstError) {
-                    form.setError('email', firstError);
-                }
+        console.error('Admin login failed:', res?.status, res?.data ?? error.message);
+
+        if (!res) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Network error',
+                text: 'Could not reach the server. Check your connection.',
+            });
+            return;
+        }
+
+        if (res.status === 422) {
+            applyFieldErrors(res);
+            const visibleError = form.errors.email || form.errors.password;
+            if (!visibleError) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Login failed',
+                    text: extractErrorText(res) || 'Invalid email or password.',
+                });
             }
-        } else if (res?.status === 419) {
+            return;
+        }
+
+        if (res.status === 419) {
             Swal.fire({
                 icon: 'error',
                 title: 'Session expired',
                 text: 'Please refresh the page and try again.',
             });
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Login failed',
-                text: res?.data?.message || 'Unable to sign in. Please try again.',
-            });
-            console.error('Login error:', error);
+            return;
         }
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Login failed',
+            text: extractErrorText(res) || `Server error (${res.status}). Check console for details.`,
+        });
     }
 };
 
