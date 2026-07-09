@@ -2,7 +2,7 @@
 -- Local:  mysql -h 127.0.0.1 -P 3308 -u viverider_usr -p viverider < deploy/rebrand-viberide.sql
 -- Prod:   docker exec -i viverider-mysql mysql -h 127.0.0.1 -u viverider_usr -p"$DB_PASSWORD" viverider < deploy/rebrand-viberide.sql
 
-UPDATE settings SET value = 'Viberide' WHERE name = 'app_name';
+UPDATE settings SET value = 'viberidegh' WHERE name = 'app_name';
 UPDATE settings SET value = REPLACE(value, 'sangvish', 'Viberide') WHERE name = 'mail_from_name' AND value LIKE '%sangvish%';
 UPDATE settings SET value = 'support@viberidegh.online' WHERE name IN ('mail_username', 'mail_from_address') AND value LIKE '%sangvish%';
 

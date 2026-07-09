@@ -101,7 +101,13 @@ jobs:
 
             php -v
 
-            printf "%s" '${{ secrets.SERVER_ENV }}' > .env
+            if [ -f .env.prod ]; then
+              cp .env.prod .env
+              echo "Using .env.prod from repository."
+            else
+              printf "%s" '${{ secrets.SERVER_ENV }}' > .env
+              echo "Using SERVER_ENV secret (.env.prod not found)."
+            fi
 
             read_env() {
               grep -E "^${1}=" .env 2>/dev/null | head -n1 | cut -d= -f2- | sed 's/^"\(.*\)"$/\1/' | sed "s/^'\(.*\)'$/\1/" | tr -d '\r' || true
@@ -258,8 +264,10 @@ jobs:
               fi
               APP_URL="$(read_env APP_URL)"
             else
-              echo "No SSL certificate yet — staying on HTTP. Add GitHub secret SSL_EMAIL or run: sudo bash deploy/setup-ssl.sh"
-              sed -i 's|^APP_URL=https://|APP_URL=http://|' .env
+              echo "No SSL certificate — HTTP only (no redirect). Run: sudo SSL_EMAIL=you@email.com bash deploy/setup-ssl.sh"
+              sudo cp deploy/nginx-viverider.conf "${NGINX_SITE}"
+              sudo nginx -t
+              sed -i "s|^APP_URL=.*|APP_URL=http://${APP_HOST}|" .env
               if grep -q '^SESSION_SECURE_COOKIE=' .env; then
                 sed -i 's/^SESSION_SECURE_COOKIE=.*/SESSION_SECURE_COOKIE=false/' .env
               else

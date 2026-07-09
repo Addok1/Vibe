@@ -4680,7 +4680,7 @@ INSERT INTO `settings` (`id`, `name`, `field`, `category`, `value`, `option_valu
 (33, 'sidebar_text_color', 'text', 'general', '#ffffff', NULL, NULL, '2026-06-19 02:16:48', '2026-06-19 04:31:00'),
 (34, 'footer_content1', 'text', 'general', '2026 © Viberide.', NULL, NULL, '2026-06-19 02:16:48', '2026-06-19 04:31:00'),
 (35, 'footer_content2', 'text', 'general', 'Design & Develop by Viberide', NULL, NULL, '2026-06-19 02:16:48', '2026-06-19 04:31:00'),
-(36, 'app_name', 'text', 'general', 'Viberide', NULL, NULL, '2026-06-19 02:16:48', '2026-06-19 04:31:00'),
+(36, 'app_name', 'text', 'general', 'viberidegh', NULL, NULL, '2026-06-19 02:16:48', '2026-06-19 04:31:00'),
 (37, 'facebook', 'text', 'general', 'https://facebook.com', NULL, NULL, '2026-06-19 02:16:48', '2026-06-19 02:16:48'),
 (38, 'instagram', 'text', 'general', 'https://instagram.com', NULL, NULL, '2026-06-19 02:16:48', '2026-06-19 02:16:48'),
 (39, 'linkedin', 'text', 'general', 'https://linkedin.com', NULL, NULL, '2026-06-19 02:16:48', '2026-06-19 02:16:48'),
