@@ -111,6 +111,29 @@ jobs:
               sed -i 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' .env
             fi
 
+            APP_URL="$(read_env APP_URL)"
+            if echo "${APP_URL}" | grep -q '^https://'; then
+              if ! ss -ltn 2>/dev/null | grep -q ':443 '; then
+                echo "APP_URL uses HTTPS but port 443 is not listening — switching to HTTP."
+                sed -i 's|^APP_URL=https://|APP_URL=http://|' .env
+                if grep -q '^SESSION_SECURE_COOKIE=' .env; then
+                  sed -i 's/^SESSION_SECURE_COOKIE=.*/SESSION_SECURE_COOKIE=false/' .env
+                else
+                  echo 'SESSION_SECURE_COOKIE=false' >> .env
+                fi
+                APP_URL="$(read_env APP_URL)"
+              fi
+            fi
+
+            APP_HOST="$(echo "${APP_URL}" | sed -E 's#https?://##' | sed 's#/.*##' | sed 's/^www\.//')"
+            if [ -n "${APP_HOST}" ]; then
+              if grep -q '^SESSION_DOMAIN=' .env; then
+                sed -i "s|^SESSION_DOMAIN=.*|SESSION_DOMAIN=${APP_HOST}|" .env
+              else
+                echo "SESSION_DOMAIN=${APP_HOST}" >> .env
+              fi
+            fi
+
             DB_DATABASE="$(read_env DB_DATABASE)"
             DB_USERNAME="$(read_env DB_USERNAME)"
             DB_PASSWORD="$(read_env DB_PASSWORD)"
@@ -208,15 +231,24 @@ jobs:
             sudo -u www-data php artisan view:cache
 
             if [ -f deploy/nginx-viverider.conf ]; then
-              sudo cp deploy/nginx-viverider.conf /etc/nginx/sites-available/viverider.online
-              sudo ln -sf /etc/nginx/sites-available/viverider.online /etc/nginx/sites-enabled/viverider.online
+              sudo cp deploy/nginx-viverider.conf /etc/nginx/sites-available/viberidegh.online
+              sudo ln -sf /etc/nginx/sites-available/viberidegh.online /etc/nginx/sites-enabled/viberidegh.online
+              sudo rm -f /etc/nginx/sites-enabled/default
               sudo nginx -t
             fi
 
             sudo systemctl reload php8.5-fpm
             sudo systemctl reload nginx
 
-            if curl -sf -o /dev/null -w "%{http_code}" http://127.0.0.1/storage/uploads/website/images/hero3.png -H "Host: viverider.online" | grep -q 200; then
+            CURL_HOST="${APP_HOST:-viberidegh.online}"
+            if curl -sf -o /dev/null -w "%{http_code}" "http://127.0.0.1/build/manifest.json" -H "Host: ${CURL_HOST}" | grep -qE '200|301|302'; then
+              echo "Vite build check: OK"
+            else
+              echo "WARNING: /build/manifest.json not reachable — check public/build was deployed."
+              ls -la public/build/manifest.json 2>/dev/null || true
+            fi
+
+            if curl -sf -o /dev/null -w "%{http_code}" "http://127.0.0.1/storage/uploads/website/images/hero3.png" -H "Host: ${CURL_HOST}" | grep -q 200; then
               echo "Image serve check: OK"
             else
               echo "WARNING: Image test failed — check nginx /storage/ alias and uploads on disk."
@@ -224,4 +256,4 @@ jobs:
               ls -la public/storage/uploads/website/images/hero3.png 2>/dev/null || true
             fi
 
-            echo "Deploy complete: http://viverider.online"
+            echo "Deploy complete: ${APP_URL:-http://viberidegh.online}"

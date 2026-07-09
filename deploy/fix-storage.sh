@@ -19,8 +19,9 @@ sudo chown -h www-data:www-data public/storage
 
 if [ -f deploy/nginx-viverider.conf ]; then
   echo "==> Updating nginx config..."
-  sudo cp deploy/nginx-viverider.conf /etc/nginx/sites-available/viverider.online
-  sudo ln -sf /etc/nginx/sites-available/viverider.online /etc/nginx/sites-enabled/viverider.online
+  sudo cp deploy/nginx-viverider.conf /etc/nginx/sites-available/viberidegh.online
+  sudo ln -sf /etc/nginx/sites-available/viberidegh.online /etc/nginx/sites-enabled/viberidegh.online
+  sudo rm -f /etc/nginx/sites-enabled/default
   sudo nginx -t
   sudo systemctl reload nginx
 fi
@@ -46,4 +47,4 @@ if [ "${FILE_COUNT}" -lt 10 ]; then
 fi
 
 echo ""
-echo "Test URL: http://viverider.online/storage/uploads/website/images/hero3.png"
+echo "Test URL: http://viberidegh.online/storage/uploads/website/images/hero3.png"
