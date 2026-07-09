@@ -21,11 +21,30 @@ jobs:
           php-version: "8.4"
           extensions: mbstring, bcmath, intl, gd, pdo_mysql, zip, curl, xml, exif, pcntl
           tools: composer:v2
+          cache: composer
+
+      - name: Cache vendor
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php84-vendor-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php84-vendor-
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node20-npm-${{ hashFiles('package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node20-npm-
 
       - name: Install dependencies and build
         run: |
