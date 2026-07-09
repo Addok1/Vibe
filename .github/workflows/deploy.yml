@@ -25,6 +25,8 @@ jobs:
             sudo mkdir -p /var/www/viverider
             sudo rm -rf /var/www/viverider/*
             sudo rm -rf /var/www/viverider/.[!.]* /var/www/viverider/..?* || true
+            sudo chown -R ${{ secrets.USER }}:${{ secrets.USER }} /var/www/viverider
+            chmod -R u+rwX /var/www/viverider
 
       - name: Upload code to server
         uses: appleboy/scp-action@v0.1.7
@@ -32,7 +34,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH }}
-          source: "."
+          source: "./*"
           target: "/var/www/viverider"
           overwrite: true
 
