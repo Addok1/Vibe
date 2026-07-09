@@ -17,7 +17,8 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: "8.5"
+          # maatwebsite/excel 3.x locks phpspreadsheet 1.x (<8.5); build on 8.4, run on server 8.5
+          php-version: "8.4"
           extensions: mbstring, bcmath, intl, gd, pdo_mysql, zip, curl, xml, exif, pcntl
           tools: composer:v2
 
@@ -28,7 +29,7 @@ jobs:
 
       - name: Install dependencies and build
         run: |
-          composer install --no-dev --optimize-autoloader --no-interaction
+          composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
           if [ -f package-lock.json ]; then
             npm ci --ignore-scripts
           else
@@ -75,6 +76,7 @@ jobs:
 
             printf "%s" '${{ secrets.SERVER_ENV }}' > .env
 
+            php artisan package:discover --ansi
             php artisan storage:link --force 2>/dev/null || true
             php artisan migrate --force
             php artisan config:cache
