@@ -151,16 +151,23 @@ jobs:
             done
 
             if [ -f database/database.sql ]; then
-              TABLE_COUNT="$(docker exec viverider-mysql mysql -h 127.0.0.1 -u"${DB_USERNAME}" -p"${DB_PASSWORD}" -Nse "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${DB_DATABASE}';" 2>/dev/null || echo 0)"
-              if [ "${TABLE_COUNT}" = "0" ]; then
-                echo "Importing initial database seed from database/database.sql..."
+              SEED_ROWS="$(docker exec viverider-mysql mysql -h 127.0.0.1 -u"${DB_USERNAME}" -p"${DB_PASSWORD}" -Nse "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${DB_DATABASE}' AND table_name='landing_homes';" 2>/dev/null || echo 0)"
+              if [ "${SEED_ROWS}" = "1" ]; then
+                LANDING_ROWS="$(docker exec viverider-mysql mysql -h 127.0.0.1 -u"${DB_USERNAME}" -p"${DB_PASSWORD}" -Nse "SELECT COUNT(*) FROM ${DB_DATABASE}.landing_homes;" 2>/dev/null || echo 0)"
+              else
+                LANDING_ROWS=0
+              fi
+
+              if [ "${LANDING_ROWS}" = "0" ]; then
+                echo "Seeding database from database/database.sql..."
+                docker exec viverider-mysql mysql -h 127.0.0.1 -u root -p"${DB_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS \`${DB_DATABASE}\`; CREATE DATABASE \`${DB_DATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL ON \`${DB_DATABASE}\`.* TO '${DB_USERNAME}'@'%'; FLUSH PRIVILEGES;"
                 sed -e "s/\`taxi1\`/\`${DB_DATABASE}\`/g" \
                     -e '/^CREATE DATABASE IF NOT EXISTS/d' \
                     -e '/^USE `/d' \
                     database/database.sql | docker exec -i viverider-mysql mysql -h 127.0.0.1 -u"${DB_USERNAME}" -p"${DB_PASSWORD}" "${DB_DATABASE}"
                 echo "Database seed imported."
               else
-                echo "Database already has ${TABLE_COUNT} tables, skipping seed import."
+                echo "Database already seeded (${LANDING_ROWS} landing_homes rows), skipping import."
               fi
             fi
 

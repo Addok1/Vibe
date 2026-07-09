@@ -361,14 +361,18 @@ class LandingHomeController extends BaseController
     // if ($enableLandingSite == 0) {
     //     return redirect()->route('login.admin'); // Replace with the actual route name for redirection
     // }
-    if ($enableLandingSite == 0) {
+    if ($enableLandingSite == 0 || $enableLandingSite === null) {
         // Fetch the dynamic redirect value from the settings table
         $adminRedirect = Setting::where('category', 'general')
             ->where('name', 'admin_login')
-            ->value('value');
+            ->value('value') ?? 'admin';
 
         // Pass the dynamic value to the route
         return redirect()->route('login.{redirect}', ['redirect' => $adminRedirect]);
+    }
+
+    if (!$landingHome) {
+        return redirect()->route('login.admin');
     }
 
          // Define the image columns you have
