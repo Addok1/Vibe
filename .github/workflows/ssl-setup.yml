@@ -1,5 +1,8 @@
 name: Setup SSL
 
+# Disabled — nginx/SSL is managed on the server manually.
+# Keep this file so old workflow links do not 404; it no-ops.
+
 on:
   workflow_dispatch:
 
@@ -7,28 +10,7 @@ jobs:
   ssl:
     runs-on: ubuntu-latest
     steps:
-      - name: Enable HTTPS on server
-        uses: appleboy/ssh-action@v1.0.3
-        env:
-          SSL_EMAIL_SECRET: ${{ secrets.SSL_EMAIL }}
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USER }}
-          key: ${{ secrets.SSH }}
-          envs: SSL_EMAIL_SECRET
-          script: |
-            set -euo pipefail
-            cd /var/www/viverider
-            read_env() {
-              grep -E "^${1}=" .env 2>/dev/null | head -n1 | cut -d= -f2- | sed 's/^"\(.*\)"$/\1/' | sed "s/^'\(.*\)'$/\1/" | tr -d '\r' || true
-            }
-            EMAIL="$(read_env SSL_EMAIL)"
-            if [ -z "${EMAIL}" ] && [ -n "${SSL_EMAIL_SECRET:-}" ]; then
-              EMAIL="${SSL_EMAIL_SECRET}"
-            fi
-            if [ -z "${EMAIL}" ]; then
-              EMAIL="admin@viberidegh.online"
-            fi
-            export SSL_EMAIL="${EMAIL}"
-            sudo bash deploy/setup-ssl.sh viberidegh.online
-            curl -kfs -o /dev/null -w "https:%{http_code}\n" https://127.0.0.1/ -H "Host: viberidegh.online" || true
+      - name: Skip
+        run: |
+          echo "SSL setup is disabled. Configure nginx yourself on the server."
+          echo "Deploy does not overwrite nginx. IP + domain both work via your nginx + Laravel request host."

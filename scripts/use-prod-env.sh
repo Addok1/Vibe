@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
-# Optional: test production .env locally (still uses local DB on 3308 unless you change DB_PORT)
+# Switch active .env to production template (for inspecting prod config locally).
+# Still uses local DB port 3308 so laptop MySQL keeps working.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-cp .env.prod .env
-# Keep local MySQL port when testing prod config on laptop
-if grep -q '^DB_PORT=3306' .env; then
-  sed -i.bak 's/^DB_PORT=3306/DB_PORT=3308/' .env && rm -f .env.bak
-fi
+cp deploy/production.env .env
+sed -i.bak 's/^DB_PORT=.*/DB_PORT=3308/' .env && rm -f .env.bak
 sed -i.bak 's|^APP_URL=.*|APP_URL=http://127.0.0.1:8000|' .env && rm -f .env.bak
-sed -i.bak 's/^SESSION_SECURE_COOKIE=.*/SESSION_SECURE_COOKIE=false/' .env && rm -f .env.bak
-sed -i.bak 's/^SESSION_DOMAIN=.*/SESSION_DOMAIN=/' .env && rm -f .env.bak
 sed -i.bak 's|^FIREBASE_CREDENTIALS=.*|FIREBASE_CREDENTIALS=public/push-configurations/firebase.json|' .env && rm -f .env.bak
+# Keep APP_ENV=production for testing prod code paths, or force local:
+# sed -i.bak 's/^APP_ENV=.*/APP_ENV=local/' .env
 
-php artisan config:clear
-echo "Active env: PROD template locally (.env.prod -> .env, URLs forced to 127.0.0.1:8000)"
+php artisan config:clear 2>/dev/null || true
+echo "Active: production.env (DB_PORT forced to 3308 for laptop)"
+grep -E '^(APP_ENV|NODE_ENV|APP_URL|DB_PORT)=' .env

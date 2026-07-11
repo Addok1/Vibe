@@ -38,11 +38,19 @@ class AppServiceProvider extends ServiceProvider
     {
 
         Inertia::share([
-            'app_for' => env('APP_FOR')
+            'app_for' => env('APP_FOR'),
+            'app_env' => app()->environment(),
         ]);
 
-        if (app()->environment('production') && str_starts_with((string) config('app.url'), 'https://')) {
-            URL::forceScheme('https');
+        // Dev (local/development): never force HTTPS.
+        // Production: follow the current request (IP or domain, http or https via your nginx).
+        // Do not lock APP_URL host — same app must work on IP + domain.
+        if (!app()->runningInConsole()) {
+            if (app()->environment(['local', 'development'])) {
+                URL::forceScheme('http');
+            } else {
+                URL::forceRootUrl(request()->getSchemeAndHttpHost());
+            }
         }
         
         $this->validator = $validator;
