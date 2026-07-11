@@ -41,7 +41,8 @@ jobs:
           sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env || echo 'APP_ENV=production' >> .env
           grep -q '^NODE_ENV=' .env && sed -i 's/^NODE_ENV=.*/NODE_ENV=production/' .env || echo 'NODE_ENV=production' >> .env
           sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env || echo 'APP_DEBUG=false' >> .env
-          grep -q '^SESSION_DOMAIN=' .env && sed -i 's/^SESSION_DOMAIN=.*/SESSION_DOMAIN=/' .env || echo 'SESSION_DOMAIN=' >> .env
+          grep -q '^SESSION_DRIVER=' .env && sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=database/' .env || echo 'SESSION_DRIVER=database' >> .env
+          sed -i '/^SESSION_DOMAIN=/d' .env
           test -s .env
 
       # Step 4: Install dependencies + build (CI only — no migrate here)

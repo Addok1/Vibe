@@ -31,7 +31,7 @@ return [
     |
     */
 
-    'lifetime' => 1051200,
+    'lifetime' => (int) env('SESSION_LIFETIME', 120),
 
     'expire_on_close' => false,
 
@@ -155,7 +155,7 @@ return [
     |
     */
 
-    'domain' => env('SESSION_DOMAIN'),
+    'domain' => ($d = env('SESSION_DOMAIN')) === '' || $d === null ? null : $d,
 
     /*
     |--------------------------------------------------------------------------
@@ -166,9 +166,13 @@ return [
     | to the server if the browser has a HTTPS connection. This will keep
     | the cookie from being sent to you when it can't be done securely.
     |
+    | null = auto (secure when request is HTTPS / behind SSL nginx).
+    |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE', false),
+    'secure' => env('SESSION_SECURE_COOKIE') === null
+        ? null
+        : filter_var(env('SESSION_SECURE_COOKIE'), FILTER_VALIDATE_BOOLEAN),
 
     /*
     |--------------------------------------------------------------------------
@@ -196,6 +200,6 @@ return [
     |
     */
 
-    'same_site' => 'lax',
+    'same_site' => env('SESSION_SAME_SITE', 'lax'),
 
 ];

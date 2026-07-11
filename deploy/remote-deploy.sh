@@ -28,9 +28,15 @@ grep -q '^APP_ENV=' .env && sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env || e
 grep -q '^NODE_ENV=' .env && sed -i 's/^NODE_ENV=.*/NODE_ENV=production/' .env || echo 'NODE_ENV=production' >> .env
 grep -q '^APP_DEBUG=' .env && sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env || echo 'APP_DEBUG=false' >> .env
 
-# Empty SESSION_DOMAIN so cookies work on both IP and domain
-grep -q '^SESSION_DOMAIN=' .env && sed -i 's/^SESSION_DOMAIN=.*/SESSION_DOMAIN=/' .env || echo 'SESSION_DOMAIN=' >> .env
-grep -q '^SESSION_SECURE_COOKIE=' .env && sed -i 's/^SESSION_SECURE_COOKIE=.*/SESSION_SECURE_COOKIE=false/' .env || echo 'SESSION_SECURE_COOKIE=false' >> .env
+# Database sessions survive deploys; host-only cookies (no SESSION_DOMAIN) work on IP + domain
+grep -q '^SESSION_DRIVER=' .env && sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=database/' .env || echo 'SESSION_DRIVER=database' >> .env
+grep -q '^SESSION_LIFETIME=' .env && sed -i 's/^SESSION_LIFETIME=.*/SESSION_LIFETIME=480/' .env || echo 'SESSION_LIFETIME=480' >> .env
+# Remove SESSION_DOMAIN so cookie is host-only (empty string breaks browsers)
+sed -i '/^SESSION_DOMAIN=/d' .env
+# Do not force secure cookies — null/auto or false both OK with your nginx SSL
+sed -i '/^SESSION_SECURE_COOKIE=/d' .env
+echo 'SESSION_SECURE_COOKIE=false' >> .env
+grep -q '^SESSION_SAME_SITE=' .env && sed -i 's/^SESSION_SAME_SITE=.*/SESSION_SAME_SITE=lax/' .env || echo 'SESSION_SAME_SITE=lax' >> .env
 
 if [ "$(read_env DB_HOST)" = "mysql" ]; then
   sed -i 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' .env

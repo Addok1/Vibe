@@ -12,11 +12,27 @@ window.axios = axios;
 
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 window.axios.defaults.withCredentials = true;
+window.axios.defaults.xsrfCookieName = 'XSRF-TOKEN';
+window.axios.defaults.xsrfHeaderName = 'X-XSRF-TOKEN';
 
 const csrfToken = document.head.querySelector('meta[name="csrf-token"]');
 if (csrfToken) {
     window.axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken.content;
 }
+
+// Keep CSRF header in sync if meta is refreshed
+window.axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 419) {
+            const fresh = document.head.querySelector('meta[name="csrf-token"]');
+            if (fresh?.content) {
+                window.axios.defaults.headers.common['X-CSRF-TOKEN'] = fresh.content;
+            }
+        }
+        return Promise.reject(error);
+    }
+);
 
 /**
  * Echo exposes an expressive API for subscribing to channels and listening

@@ -91,9 +91,13 @@ const submit = async () => {
 
         if (res.status === 419) {
             Swal.fire({
-                icon: 'error',
+                icon: 'warning',
                 title: 'Session expired',
-                text: 'Please refresh the page and try again.',
+                text: 'Refreshing the page for a new session…',
+                timer: 1500,
+                showConfirmButton: false,
+            }).then(() => {
+                window.location.reload();
             });
             return;
         }
