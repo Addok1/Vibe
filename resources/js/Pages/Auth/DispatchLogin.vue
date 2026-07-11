@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link, useForm ,router} from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import Checkbox from '@/Components/Checkbox.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -28,7 +28,8 @@ const submit = async () => {
     try {
         const response = await csrfPost('/dispatch-login', form.data());
         if (response.status == 200) {
-            router.get('/dispatcher/bookride');
+            window.location.assign(response.data?.redirect || '/dispatcher/bookride');
+            return;
         }
     } catch (error) {
         if (error.response?.status === 419) {

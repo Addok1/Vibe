@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import Checkbox from '@/Components/Checkbox.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -49,8 +49,9 @@ const submit = async () => {
     form.clearErrors();
     try {
         const response = await csrfPost('/owner-login', form.data());
-        if (response.data.success) {
-            router.get('/owner-dashboard');
+        if (response.data.success || response.status === 200) {
+            window.location.assign(response.data?.redirect || '/owner-dashboard');
+            return;
         }
     } catch (error) {
         if (error.response?.status === 419) {

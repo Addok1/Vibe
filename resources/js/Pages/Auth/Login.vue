@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link, useForm ,router} from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import Checkbox from '@/Components/Checkbox.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -59,15 +59,16 @@ const submit = async () => {
     if (isLoggingIn.value) return;
     form.clearErrors();
     isLoggingIn.value = true;
-    let succeeded = false;
     try {
         const response = await csrfPost('/admin-login', form.data());
         if (response.status === 200) {
-            succeeded = true;
-            router.get('/dashboard');
+            // Full page load so the new session cookie is always applied (fixes prod stuck loading)
+            window.location.assign(response.data?.redirect || '/dashboard');
             return;
         }
+        isLoggingIn.value = false;
     } catch (error) {
+        isLoggingIn.value = false;
         const res = error.response;
         console.error('Admin login failed:', res?.status, res?.data ?? error.message);
 
@@ -111,10 +112,6 @@ const submit = async () => {
             title: 'Login failed',
             text: extractErrorText(res) || `Server error (${res.status}). Check console for details.`,
         });
-    } finally {
-        if (!succeeded) {
-            isLoggingIn.value = false;
-        }
     }
 };
 

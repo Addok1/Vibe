@@ -735,41 +735,28 @@ class LoginController extends ApiController
      */
     protected function authenticateUser(User $user, $remember = false)
     {
-        // dd($user->hasRole('owner'));
         auth('web')->login($user, $remember);
-        $user_role = $user->roles->first();
-        session(['module' => "transport"]);
-        // session(['module' => $user_role->slug]);
+        request()->session()->regenerate();
+        session(['module' => 'transport']);
 
-        return $this->respondSuccess();
-
-
-        if($user->hasRole('owner'))
-        {
-            return redirect('/individual-owner-dashboard');
-
-        }elseif($user->hasRole('user')){
-
-            return $this->respondSuccess();
-
-        }elseif($user->hasRole('dispatcher')){
-
-            return redirect()->route('dispatch.dashboard');
-
-        }elseif($user->hasRole('agent')){
-
-            return redirect()->route('dispatcherPro.dashboard');
-
-        }
-        elseif($user->hasRole('franchise_owner')){
-
-            return redirect()->route('/individual-franchiseowner-dashboard');
-
-        }
-        else{
-            return redirect('/dashboard');
+        $redirect = '/dashboard';
+        if ($user->hasRole('owner')) {
+            $redirect = '/individual-owner-dashboard';
+        } elseif ($user->hasRole('dispatcher')) {
+            $redirect = '/dispatcher/bookride';
+        } elseif ($user->hasRole('agent')) {
+            $redirect = '/dispatcher-pro/bookride';
+        } elseif ($user->hasRole('franchise_owner')) {
+            $redirect = '/franchiseowner-dashboard';
+        } elseif ($user->hasRole('user')) {
+            $redirect = '/create-booking';
         }
 
+        return response()->json([
+            'success' => true,
+            'message' => 'success',
+            'redirect' => $redirect,
+        ]);
     }
 
     /**
