@@ -1,4 +1,4 @@
-name: Viberide Deploy
+name: Viberide CI/CD Pipeline
 
 on:
   push:
@@ -9,14 +9,13 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    env:
-      NODE_ENV: production
-      APP_ENV: production
 
     steps:
+      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Step 2: Setup PHP + Node
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -29,32 +28,32 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Create .env (production)
+      # Step 3: Create .env file
+      - name: Create .env file
         env:
           PROD_ENV: ${{ secrets.SERVER_ENV }}
         run: |
           if [ -n "${PROD_ENV}" ]; then
             printf '%s\n' "${PROD_ENV}" > .env
-            echo "Using SERVER_ENV secret"
           else
             cp deploy/production.env .env
-            echo "Using deploy/production.env"
           fi
-          # Always production on deploy
-          grep -q '^APP_ENV=' .env && sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env || echo 'APP_ENV=production' >> .env
+          sed -i 's/^APP_ENV=.*/APP_ENV=production/' .env || echo 'APP_ENV=production' >> .env
           grep -q '^NODE_ENV=' .env && sed -i 's/^NODE_ENV=.*/NODE_ENV=production/' .env || echo 'NODE_ENV=production' >> .env
-          grep -q '^APP_DEBUG=' .env && sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env || echo 'APP_DEBUG=false' >> .env
+          sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env || echo 'APP_DEBUG=false' >> .env
           grep -q '^SESSION_DOMAIN=' .env && sed -i 's/^SESSION_DOMAIN=.*/SESSION_DOMAIN=/' .env || echo 'SESSION_DOMAIN=' >> .env
           test -s .env
 
-      - name: Install and build
+      # Step 4: Install dependencies + build (CI only — no migrate here)
+      - name: Install dependencies and build
         run: |
           composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
           if [ -f package-lock.json ]; then npm ci --ignore-scripts; else npm install --ignore-scripts; fi
           npm run build
           rm -rf node_modules
 
-      - name: Backup uploads and clean server
+      # Step 5: Backup uploads + clean server dir
+      - name: Prepare server directory
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
@@ -70,7 +69,8 @@ jobs:
             sudo chown -R ${{ secrets.USER }}:${{ secrets.USER }} /var/www/viverider
             chmod -R u+rwX /var/www/viverider
 
-      - name: Upload app
+      # Step 6: Upload app to server
+      - name: Upload app to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOST }}
@@ -81,7 +81,8 @@ jobs:
           source: ".env,app,bootstrap,config,database,deploy,public,resources,routes,storage,vendor,artisan,composer.json,composer.lock,package.json,docker-compose.db.yml,vite.config.js,phpunit.xml"
           target: "/var/www/viverider"
 
-      - name: Migrate + restart (nginx untouched)
+      # Step 7: Restart on server — migrate runs HERE (not in GitHub Actions)
+      - name: Restart server + migrate
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
@@ -92,3 +93,5 @@ jobs:
             cd /var/www/viverider
             chmod +x deploy/remote-deploy.sh
             bash deploy/remote-deploy.sh
+            echo "==> Server migrate done"
+            sudo -u www-data php artisan migrate:status || true
