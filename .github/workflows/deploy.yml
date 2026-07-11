@@ -1,66 +1,56 @@
-name: Deploy
+name: Viberide Deploy
 
 on:
-  workflow_dispatch:
   push:
-    branches: ["main"]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  deploy:
-    if: github.ref == 'refs/heads/main'
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          # maatwebsite/excel 3.x locks phpspreadsheet 1.x (<8.5); build on 8.4, run on server 8.5
           php-version: "8.4"
           extensions: mbstring, bcmath, intl, gd, pdo_mysql, zip, curl, xml, exif, pcntl
           tools: composer:v2
 
-      - name: Get Composer cache directory
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache Composer dependencies
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-composer-
-
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Cache npm dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            node_modules
-          key: ${{ runner.os }}-npm-${{ hashFiles('package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
+      - name: Create .env file
+        env:
+          PROD_ENV: ${{ secrets.SERVER_ENV }}
+        run: |
+          if [ -n "${PROD_ENV}" ]; then
+            printf '%s\n' "${PROD_ENV}" > .env
+            echo "Using SERVER_ENV secret"
+          elif [ -f deploy/production.env ]; then
+            cp deploy/production.env .env
+            echo "Using deploy/production.env"
+          else
+            echo "ERROR: Set SERVER_ENV secret or commit deploy/production.env"
+            exit 1
+          fi
+          test -s .env
+          echo "Env keys: $(grep -cE '^[A-Z0-9_]+=' .env)"
 
       - name: Install dependencies and build
         run: |
           composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
-          if [ -f package-lock.json ]; then
-            npm ci --ignore-scripts
-          else
-            npm install --ignore-scripts
-          fi
+          if [ -f package-lock.json ]; then npm ci --ignore-scripts; else npm install --ignore-scripts; fi
           npm run build
           rm -rf node_modules
 
-      - name: Clean server directory
+      - name: Backup uploads and clean server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
@@ -68,300 +58,33 @@ jobs:
           key: ${{ secrets.SSH }}
           script: |
             set -e
-            sudo mkdir -p /var/www/.viverider-persist
+            sudo mkdir -p /var/www/.viverider-persist /var/www/viverider
             if [ -d /var/www/viverider/storage/app/public/uploads ]; then
-              echo "Backing up uploaded files before deploy..."
               sudo rsync -a --delete /var/www/viverider/storage/app/public/uploads/ /var/www/.viverider-persist/uploads/
             fi
-            sudo mkdir -p /var/www/viverider
-            sudo rm -rf /var/www/viverider/*
-            sudo rm -rf /var/www/viverider/.[!.]* /var/www/viverider/..?* || true
+            sudo rm -rf /var/www/viverider/* /var/www/viverider/.[!.]* /var/www/viverider/..?* 2>/dev/null || true
             sudo chown -R ${{ secrets.USER }}:${{ secrets.USER }} /var/www/viverider
             chmod -R u+rwX /var/www/viverider
 
-      - name: Upload code to server
+      - name: Upload app to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH }}
-          # Explicit .env.prod — shell globs like ./* skip hidden files
-          source: "deploy/production.env,.env.prod,./*"
-          target: "/var/www/viverider"
+          port: 22
           overwrite: true
+          source: ".env,app,bootstrap,config,database,deploy,public,resources,routes,storage,vendor,artisan,composer.json,composer.lock,package.json,docker-compose.db.yml,vite.config.js,phpunit.xml"
+          target: "/var/www/viverider"
 
-      - name: Deploy on server (app host + mysql docker)
+      - name: Restart / finish deploy on server
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          SERVER_ENV: ${{ secrets.SERVER_ENV }}
-          SSL_EMAIL_SECRET: ${{ secrets.SSL_EMAIL }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH }}
-          envs: SERVER_ENV,SSL_EMAIL_SECRET
           script: |
-            set -eo pipefail
+            set -e
             cd /var/www/viverider
-
-            php -v
-
-            # Prefer non-hidden deploy/production.env (always uploaded by SCP).
-            # Never inject secrets inline into the script — that breaks on quotes/parens.
-            if [ -f deploy/production.env ]; then
-              cp deploy/production.env .env
-              echo "Using deploy/production.env"
-            elif [ -f .env.prod ]; then
-              cp .env.prod .env
-              echo "Using .env.prod"
-            elif [ -n "${SERVER_ENV:-}" ]; then
-              printf '%s\n' "${SERVER_ENV}" > .env
-              echo "Using SERVER_ENV secret"
-            else
-              echo "ERROR: No production env found. Commit deploy/production.env or set SERVER_ENV secret."
-              ls -la deploy/ .env* 2>/dev/null || true
-              exit 1
-            fi
-
-            if [ ! -s .env ]; then
-              echo "ERROR: .env is empty after env setup."
-              exit 1
-            fi
-            echo "Env keys loaded: $(grep -cE '^[A-Z0-9_]+=' .env || true)"
-
-            read_env() {
-              grep -E "^${1}=" .env 2>/dev/null | head -n1 | cut -d= -f2- | sed 's/^"\(.*\)"$/\1/' | sed "s/^'\(.*\)'$/\1/" | tr -d '\r' || true
-            }
-
-            if [ "$(read_env DB_HOST)" = "mysql" ]; then
-              sed -i 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' .env
-            fi
-
-            APP_URL="$(read_env APP_URL)"
-            APP_HOST="$(echo "${APP_URL}" | sed -E 's#https?://##' | sed 's#/.*##' | sed 's/^www\.//')"
-            if [ -z "${APP_HOST}" ]; then
-              APP_HOST="viberidegh.online"
-            fi
-
-            if [ -n "${APP_HOST}" ]; then
-              if grep -q '^SESSION_DOMAIN=' .env; then
-                sed -i "s|^SESSION_DOMAIN=.*|SESSION_DOMAIN=${APP_HOST}|" .env
-              else
-                echo "SESSION_DOMAIN=${APP_HOST}" >> .env
-              fi
-            fi
-
-            DB_DATABASE="$(read_env DB_DATABASE)"
-            DB_USERNAME="$(read_env DB_USERNAME)"
-            DB_PASSWORD="$(read_env DB_PASSWORD)"
-            DB_ROOT_PASSWORD="$(read_env DB_ROOT_PASSWORD)"
-            DB_ROOT_PASSWORD="${DB_ROOT_PASSWORD:-$DB_PASSWORD}"
-
-            if [ -z "$DB_DATABASE" ] || [ -z "$DB_USERNAME" ] || [ -z "$DB_PASSWORD" ]; then
-              echo "Missing required DB_* values in .env (DB_DATABASE, DB_USERNAME, DB_PASSWORD)."
-              exit 1
-            fi
-
-            export DB_DATABASE DB_USERNAME DB_PASSWORD DB_ROOT_PASSWORD
-
-            sudo systemctl stop mysql 2>/dev/null || true
-
-            if ! command -v docker >/dev/null 2>&1; then
-              echo "Docker is required for MySQL container. Install docker first."
-              exit 1
-            fi
-
-            if docker compose version >/dev/null 2>&1; then
-              DOCKER_COMPOSE_CMD="docker compose"
-            elif command -v docker-compose >/dev/null 2>&1; then
-              DOCKER_COMPOSE_CMD="docker-compose"
-            else
-              echo "Docker Compose is required. Install docker compose plugin."
-              exit 1
-            fi
-
-            $DOCKER_COMPOSE_CMD -f docker-compose.db.yml up -d
-
-            for i in $(seq 1 30); do
-              if docker exec viverider-mysql mysqladmin ping -h 127.0.0.1 -u"${DB_USERNAME}" -p"${DB_PASSWORD}" --silent >/dev/null 2>&1; then
-                echo "MySQL is ready."
-                break
-              fi
-              if [ "$i" -eq 30 ]; then
-                echo "MySQL container failed to become ready in time."
-                docker logs viverider-mysql --tail 100 || true
-                exit 1
-              fi
-              sleep 2
-            done
-
-            SEED_LOCK="/var/www/.viverider-db-seeded"
-
-            if [ -f "${SEED_LOCK}" ]; then
-              echo "Database seed already applied (${SEED_LOCK}), skipping import."
-            elif [ -f database/database.sql ]; then
-              SEED_ROWS="$(docker exec viverider-mysql mysql -h 127.0.0.1 -u"${DB_USERNAME}" -p"${DB_PASSWORD}" -Nse "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${DB_DATABASE}' AND table_name='landing_homes';" 2>/dev/null || echo 0)"
-              if [ "${SEED_ROWS}" = "1" ]; then
-                LANDING_ROWS="$(docker exec viverider-mysql mysql -h 127.0.0.1 -u"${DB_USERNAME}" -p"${DB_PASSWORD}" -Nse "SELECT COUNT(*) FROM ${DB_DATABASE}.landing_homes;" 2>/dev/null || echo 0)"
-              else
-                LANDING_ROWS=0
-              fi
-
-              if [ "${LANDING_ROWS}" = "0" ]; then
-                echo "First deploy: seeding database from database/database.sql..."
-                docker exec viverider-mysql mysql -h 127.0.0.1 -u root -p"${DB_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS \`${DB_DATABASE}\`; CREATE DATABASE \`${DB_DATABASE}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL ON \`${DB_DATABASE}\`.* TO '${DB_USERNAME}'@'%'; FLUSH PRIVILEGES;"
-                sed -e "s/\`taxi1\`/\`${DB_DATABASE}\`/g" \
-                    -e '/^CREATE DATABASE IF NOT EXISTS/d' \
-                    -e '/^USE `/d' \
-                    database/database.sql | docker exec -i viverider-mysql mysql -h 127.0.0.1 -u"${DB_USERNAME}" -p"${DB_PASSWORD}" "${DB_DATABASE}"
-                echo "Database seed imported."
-              else
-                echo "Database already has ${LANDING_ROWS} landing_homes rows, skipping import."
-              fi
-
-              sudo touch "${SEED_LOCK}"
-              echo "Seed lock created: ${SEED_LOCK}"
-            fi
-
-            sudo mkdir -p storage/logs storage/framework/{cache,sessions,views} storage/app/public/uploads bootstrap/cache
-            if [ -d /var/www/.viverider-persist/uploads ]; then
-              echo "Restoring uploaded files..."
-              sudo rsync -a /var/www/.viverider-persist/uploads/ storage/app/public/uploads/
-            fi
-            sudo chown -R www-data:www-data storage bootstrap/cache
-            sudo chmod -R ug+rwx storage bootstrap/cache
-
-            sudo -u www-data php artisan package:discover --ansi
-
-            # public/ is owned by deploy user; www-data cannot symlink there — use root
-            sudo rm -f public/storage
-            sudo ln -sfn /var/www/viverider/storage/app/public /var/www/viverider/public/storage
-            sudo chown -h www-data:www-data public/storage
-            if [ ! -f storage/app/public/uploads/website/images/hero3.png ]; then
-              echo "ERROR: Default landing images missing in storage/app/public/uploads."
-              echo "Ensure storage/app/public/uploads is committed and pushed to git."
-              exit 1
-            fi
-            echo "Upload check OK: $(find storage/app/public/uploads -type f | wc -l) files"
-            sudo -u www-data php artisan migrate --force
-
-            if [ -f deploy/rebrand-viberide.sql ]; then
-              echo "Applying Viberide branding updates..."
-              docker exec -i viverider-mysql mysql -h 127.0.0.1 -u"${DB_USERNAME}" -p"${DB_PASSWORD}" "${DB_DATABASE}" < deploy/rebrand-viberide.sql || true
-              sudo -u www-data php artisan cache:clear || true
-            fi
-
-            NGINX_SITE="/etc/nginx/sites-available/viberidegh.online"
-            CERT_PATH="/etc/letsencrypt/live/${APP_HOST}/fullchain.pem"
-            SSL_EMAIL="$(read_env SSL_EMAIL)"
-            if [ -z "${SSL_EMAIL}" ] && [ -n "${SSL_EMAIL_SECRET:-}" ]; then
-              SSL_EMAIL="${SSL_EMAIL_SECRET}"
-            fi
-
-            sudo cp deploy/nginx-viverider.conf "${NGINX_SITE}"
-            sudo ln -sf "${NGINX_SITE}" /etc/nginx/sites-enabled/viberidegh.online
-            sudo rm -f /etc/nginx/sites-enabled/default
-            sudo nginx -t
-            sudo systemctl reload nginx
-
-            if [ ! -f "${CERT_PATH}" ] && [ -n "${SSL_EMAIL}" ]; then
-              echo "Requesting Let's Encrypt certificate for ${APP_HOST}..."
-              sudo apt-get update -qq
-              sudo apt-get install -y certbot python3-certbot-nginx ssl-cert
-              if [ ! -f /etc/letsencrypt/ssl-dhparams.pem ]; then
-                sudo openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048
-              fi
-              if ! sudo certbot certonly --webroot -w /var/www/viverider/public \
-                -d "${APP_HOST}" -d "www.${APP_HOST}" \
-                --non-interactive --agree-tos -m "${SSL_EMAIL}"; then
-                echo "Certbot failed for ${APP_HOST} + www — retrying primary domain only..."
-                sudo certbot certonly --webroot -w /var/www/viverider/public \
-                  -d "${APP_HOST}" \
-                  --non-interactive --agree-tos -m "${SSL_EMAIL}" || true
-              fi
-            fi
-
-            if [ -f "${CERT_PATH}" ]; then
-              echo "SSL certificate found — enabling HTTPS nginx config."
-              sudo cp deploy/nginx-viberidegh.ssl.conf "${NGINX_SITE}"
-              sudo nginx -t
-              sed -i "s|^APP_URL=.*|APP_URL=https://${APP_HOST}|" .env
-              if grep -q '^SESSION_SECURE_COOKIE=' .env; then
-                sed -i 's/^SESSION_SECURE_COOKIE=.*/SESSION_SECURE_COOKIE=true/' .env
-              else
-                echo 'SESSION_SECURE_COOKIE=true' >> .env
-              fi
-              APP_URL="$(read_env APP_URL)"
-            else
-              sudo apt-get install -y ssl-cert 2>/dev/null || true
-              if [ -f /etc/ssl/certs/ssl-cert-snakeoil.pem ]; then
-                echo "Let's Encrypt unavailable — enabling temporary self-signed HTTPS on port 443."
-                sudo cp deploy/nginx-viberidegh.ssl-snakeoil.conf "${NGINX_SITE}"
-                sudo nginx -t
-                sed -i "s|^APP_URL=.*|APP_URL=https://${APP_HOST}|" .env
-                if grep -q '^SESSION_SECURE_COOKIE=' .env; then
-                  sed -i 's/^SESSION_SECURE_COOKIE=.*/SESSION_SECURE_COOKIE=true/' .env
-                else
-                  echo 'SESSION_SECURE_COOKIE=true' >> .env
-                fi
-                APP_URL="$(read_env APP_URL)"
-              else
-                echo "No SSL certificate — HTTP only (no redirect). Run: sudo SSL_EMAIL=you@email.com bash deploy/setup-ssl.sh"
-                sudo cp deploy/nginx-viverider.conf "${NGINX_SITE}"
-                sudo nginx -t
-                sed -i "s|^APP_URL=.*|APP_URL=http://${APP_HOST}|" .env
-                if grep -q '^SESSION_SECURE_COOKIE=' .env; then
-                  sed -i 's/^SESSION_SECURE_COOKIE=.*/SESSION_SECURE_COOKIE=false/' .env
-                else
-                  echo 'SESSION_SECURE_COOKIE=false' >> .env
-                fi
-                APP_URL="$(read_env APP_URL)"
-              fi
-            fi
-
-            sudo ln -sf "${NGINX_SITE}" /etc/nginx/sites-enabled/viberidegh.online
-            sudo rm -f /etc/nginx/sites-enabled/default
-            sudo nginx -t
-
-            if command -v ufw >/dev/null 2>&1 && sudo ufw status 2>/dev/null | grep -qi "Status: active"; then
-              echo "Opening firewall for HTTP/HTTPS..."
-              sudo ufw allow 'Nginx Full' 2>/dev/null || { sudo ufw allow 80/tcp; sudo ufw allow 443/tcp; }
-            fi
-
-            sudo systemctl reload nginx
-
-            if [ -f "${CERT_PATH}" ]; then
-              if ss -tln 2>/dev/null | grep -q ':443 '; then
-                echo "Port 443 is listening."
-              else
-                echo "WARNING: SSL cert exists but port 443 is not listening. Check nginx error log."
-                sudo nginx -t || true
-              fi
-            else
-              echo "HTTPS not enabled yet. Ensure GitHub secret SSL_EMAIL or .env.prod SSL_EMAIL is set, and EC2 Security Group allows inbound TCP 443."
-            fi
-
-            sudo -u www-data php artisan config:cache
-            sudo -u www-data php artisan view:cache
-            sudo -u www-data php artisan route:cache 2>/dev/null || true
-
-            sudo systemctl reload php8.5-fpm
-            sudo systemctl reload nginx
-
-            CURL_SCHEME="$(echo "${APP_URL}" | grep -q '^https://' && echo https || echo http)"
-            CURL_HOST="${APP_HOST:-viberidegh.online}"
-            if curl -kfs -o /dev/null -w "%{http_code}" "${CURL_SCHEME}://127.0.0.1/build/manifest.json" -H "Host: ${CURL_HOST}" | grep -qE '200|301|302'; then
-              echo "Vite build check: OK"
-            else
-              echo "WARNING: /build/manifest.json not reachable."
-              ls -la public/build/manifest.json 2>/dev/null || true
-            fi
-
-            if curl -kfs -o /dev/null -w "%{http_code}" "${CURL_SCHEME}://127.0.0.1/storage/uploads/website/images/hero3.png" -H "Host: ${CURL_HOST}" | grep -q 200; then
-              echo "Image serve check: OK"
-            else
-              echo "WARNING: Image test failed."
-              ls -la storage/app/public/uploads/website/images/hero3.png || true
-            fi
-
-            echo "Deploy complete: ${APP_URL}"
+            chmod +x deploy/remote-deploy.sh
+            bash deploy/remote-deploy.sh
