@@ -86,5 +86,7 @@ jobs:
           script: |
             set -e
             cd /var/www/viverider
-            chmod +x deploy/remote-deploy.sh
+            chmod +x deploy/remote-deploy.sh deploy/setup-ssl.sh
             bash deploy/remote-deploy.sh
+            echo "==> migrate:status (post-deploy)"
+            sudo -u www-data php artisan migrate:status || true
