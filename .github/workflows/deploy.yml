@@ -85,29 +85,49 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH }}
-          source: "./*"
+          # Explicit .env.prod — shell globs like ./* skip hidden files
+          source: "deploy/production.env,.env.prod,./*"
           target: "/var/www/viverider"
           overwrite: true
 
       - name: Deploy on server (app host + mysql docker)
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          SERVER_ENV: ${{ secrets.SERVER_ENV }}
+          SSL_EMAIL_SECRET: ${{ secrets.SSL_EMAIL }}
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH }}
+          envs: SERVER_ENV,SSL_EMAIL_SECRET
           script: |
-            set -exo pipefail
+            set -eo pipefail
             cd /var/www/viverider
 
             php -v
 
-            if [ -f .env.prod ]; then
+            # Prefer non-hidden deploy/production.env (always uploaded by SCP).
+            # Never inject secrets inline into the script — that breaks on quotes/parens.
+            if [ -f deploy/production.env ]; then
+              cp deploy/production.env .env
+              echo "Using deploy/production.env"
+            elif [ -f .env.prod ]; then
               cp .env.prod .env
-              echo "Using .env.prod from repository."
+              echo "Using .env.prod"
+            elif [ -n "${SERVER_ENV:-}" ]; then
+              printf '%s\n' "${SERVER_ENV}" > .env
+              echo "Using SERVER_ENV secret"
             else
-              printf "%s" '${{ secrets.SERVER_ENV }}' > .env
-              echo "Using SERVER_ENV secret (.env.prod not found)."
+              echo "ERROR: No production env found. Commit deploy/production.env or set SERVER_ENV secret."
+              ls -la deploy/ .env* 2>/dev/null || true
+              exit 1
             fi
+
+            if [ ! -s .env ]; then
+              echo "ERROR: .env is empty after env setup."
+              exit 1
+            fi
+            echo "Env keys loaded: $(grep -cE '^[A-Z0-9_]+=' .env || true)"
 
             read_env() {
               grep -E "^${1}=" .env 2>/dev/null | head -n1 | cut -d= -f2- | sed 's/^"\(.*\)"$/\1/' | sed "s/^'\(.*\)'$/\1/" | tr -d '\r' || true
@@ -234,8 +254,8 @@ jobs:
             NGINX_SITE="/etc/nginx/sites-available/viberidegh.online"
             CERT_PATH="/etc/letsencrypt/live/${APP_HOST}/fullchain.pem"
             SSL_EMAIL="$(read_env SSL_EMAIL)"
-            if [ -z "${SSL_EMAIL}" ]; then
-              SSL_EMAIL='${{ secrets.SSL_EMAIL }}'
+            if [ -z "${SSL_EMAIL}" ] && [ -n "${SSL_EMAIL_SECRET:-}" ]; then
+              SSL_EMAIL="${SSL_EMAIL_SECRET}"
             fi
 
             sudo cp deploy/nginx-viverider.conf "${NGINX_SITE}"
