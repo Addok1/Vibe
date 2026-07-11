@@ -4,10 +4,10 @@ import Checkbox from '@/Components/Checkbox.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
-import axios from 'axios';
 import { usePage } from '@inertiajs/vue3';
 import { onMounted, ref } from 'vue';
 import Swal from "sweetalert2";
+import { csrfPost, refreshCsrfToken } from '@/csrf';
 
 defineProps({
     canResetPassword: Boolean,
@@ -21,6 +21,7 @@ const form = useForm({
 });
 const page = usePage()
 const appFor = page.props.app_for
+const isLoggingIn = ref(false);
 
 const genericValidationMessage = 'The given data failed to pass validation.';
 
@@ -55,13 +56,16 @@ const applyFieldErrors = (res) => {
 };
 
 const submit = async () => {
+    if (isLoggingIn.value) return;
     form.clearErrors();
+    isLoggingIn.value = true;
+    let succeeded = false;
     try {
-        const response = await axios.post('/admin-login', form.data(), {
-            headers: { Accept: 'application/json' },
-        });
+        const response = await csrfPost('/admin-login', form.data());
         if (response.status === 200) {
+            succeeded = true;
             router.get('/dashboard');
+            return;
         }
     } catch (error) {
         const res = error.response;
@@ -107,10 +111,16 @@ const submit = async () => {
             title: 'Login failed',
             text: extractErrorText(res) || `Server error (${res.status}). Check console for details.`,
         });
+    } finally {
+        if (!succeeded) {
+            isLoggingIn.value = false;
+        }
     }
 };
 
 onMounted(() => {
+    refreshCsrfToken().catch(() => {});
+
     const displayEmail = document.getElementById('display-email')?.textContent.trim();
     const displayPassword = document.getElementById('display-password')?.textContent.trim();
     const fillBtn = document.getElementById('fillBtn');
@@ -230,9 +240,15 @@ export default {
                                         </div>
 
                                         <div class="mt-3">
-                                            <BButton variant="success" class="w-100 mt-3" type="submit"
-                                                :class="{ 'opacity-25': form.processing }" :disabled="form.processing"
-                                                style="height: 45px; border-radius: 10px;">Login</BButton>
+                                            <BButton variant="success" class="w-100 mt-3 login-submit-btn" type="submit"
+                                                :disabled="isLoggingIn"
+                                                style="height: 45px; border-radius: 10px;">
+                                                <span v-if="isLoggingIn" class="d-inline-flex align-items-center gap-2">
+                                                    <i class="ri-loader-4-line login-btn-spinner"></i>
+                                                    Logging in...
+                                                </span>
+                                                <span v-else>Login</span>
+                                            </BButton>
                                         </div>
 
                                     </form>
@@ -417,5 +433,17 @@ export default {
 }
 }
 
+.login-submit-btn:disabled {
+    opacity: 0.85;
+    cursor: not-allowed;
+}
+.login-btn-spinner {
+    display: inline-block;
+    font-size: 1.15rem;
+    animation: login-btn-spin 0.8s linear infinite;
+}
+@keyframes login-btn-spin {
+    to { transform: rotate(360deg); }
+}
 
 </style>

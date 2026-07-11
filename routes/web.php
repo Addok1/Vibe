@@ -40,6 +40,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session')])->group(fun
 
     Route::middleware('guest')->get('/mi-admin',  [LoginController::class,'adminLogin'])->name('login.admin');
 
+    // Lightweight CSRF refresh — keeps session + XSRF-TOKEN cookie in sync (local + production)
+    Route::get('/csrf-token', function () {
+        return response()->json([
+            'token' => csrf_token(),
+        ]);
+    })->name('csrf.token');
+
     Route::group(['prefix'=>'login','middleware'=>'redirect_dynamic_login'],function(){
 
         // GET /login: middleware redirects to login/user (customer login)

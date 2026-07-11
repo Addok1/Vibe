@@ -42,7 +42,10 @@ jobs:
           grep -q '^NODE_ENV=' .env && sed -i 's/^NODE_ENV=.*/NODE_ENV=production/' .env || echo 'NODE_ENV=production' >> .env
           sed -i 's/^APP_DEBUG=.*/APP_DEBUG=false/' .env || echo 'APP_DEBUG=false' >> .env
           grep -q '^SESSION_DRIVER=' .env && sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=database/' .env || echo 'SESSION_DRIVER=database' >> .env
+          grep -q '^SESSION_COOKIE=' .env && sed -i 's/^SESSION_COOKIE=.*/SESSION_COOKIE=viberide_session/' .env || echo 'SESSION_COOKIE=viberide_session' >> .env
+          grep -q '^SESSION_SAME_SITE=' .env && sed -i 's/^SESSION_SAME_SITE=.*/SESSION_SAME_SITE=lax/' .env || echo 'SESSION_SAME_SITE=lax' >> .env
           sed -i '/^SESSION_DOMAIN=/d' .env
+          sed -i '/^SESSION_SECURE_COOKIE=/d' .env
           test -s .env
 
       # Step 4: Install dependencies + build (CI only — no migrate here)

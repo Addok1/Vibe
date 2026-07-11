@@ -1,7 +1,5 @@
 <?php
 
-use Illuminate\Support\Str;
-
 return [
 
     /*
@@ -126,10 +124,8 @@ return [
     |
     */
 
-    'cookie' => env(
-        'SESSION_COOKIE',
-        Str::slug(env('APP_NAME', 'laravel'), '_').'_session'
-    ),
+    // Fixed name — do not derive from APP_NAME (renames invalidate all sessions)
+    'cookie' => env('SESSION_COOKIE', 'viberide_session'),
 
     /*
     |--------------------------------------------------------------------------
@@ -149,9 +145,8 @@ return [
     | Session Cookie Domain
     |--------------------------------------------------------------------------
     |
-    | Here you may change the domain of the cookie used to identify a session
-    | in your application. This will determine which domains the cookie is
-    | available to in your application. A sensible default has been set.
+    | Leave null (omit SESSION_DOMAIN) for host-only cookies.
+    | Works on localhost, IP, and domain. Empty .env value => null.
     |
     */
 
@@ -162,15 +157,12 @@ return [
     | HTTPS Only Cookies
     |--------------------------------------------------------------------------
     |
-    | By setting this option to true, session cookies will only be sent back
-    | to the server if the browser has a HTTPS connection. This will keep
-    | the cookie from being sent to you when it can't be done securely.
-    |
     | null = auto (secure when request is HTTPS / behind SSL nginx).
+    | false = allow HTTP. true = HTTPS only.
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE') === null
+    'secure' => env('SESSION_SECURE_COOKIE') === null || env('SESSION_SECURE_COOKIE') === ''
         ? null
         : filter_var(env('SESSION_SECURE_COOKIE'), FILTER_VALIDATE_BOOLEAN),
 

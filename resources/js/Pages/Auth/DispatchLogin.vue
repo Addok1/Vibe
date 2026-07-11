@@ -4,7 +4,7 @@ import Checkbox from '@/Components/Checkbox.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import TextInput from '@/Components/TextInput.vue';
-import axios from 'axios';
+import { csrfPost, refreshCsrfToken } from '@/csrf';
 import {onMounted, ref }  from 'vue';
 import {usePage} from '@inertiajs/vue3'
 import Swal from "sweetalert2";
@@ -26,12 +26,16 @@ const appFor = page.props.app_for
 const submit = async () => {
     form.clearErrors();
     try {
-        const response = await axios.post('/dispatch-login', form.data());
+        const response = await csrfPost('/dispatch-login', form.data());
         if (response.status == 200) {
             router.get('/dispatcher/bookride');
         }
     } catch (error) {
-        if (error.response.status === 422) {
+        if (error.response?.status === 419) {
+            window.location.reload();
+            return;
+        }
+        if (error.response?.status === 422) {
             // Set validation errors in the form
             form.setError('email', error.response.data.errors.email ? error.response.data.errors.email[0] : '');
             form.setError('password', error.response.data.errors.password ? error.response.data.errors.password[0] : '');
@@ -43,6 +47,7 @@ const submit = async () => {
 };
 
 onMounted(()=>{
+    refreshCsrfToken().catch(() => {});
     const displayEmail = document.getElementById('display-email')?.textContent.trim();
     const displayPassword = document.getElementById('display-password')?.textContent.trim();
     const fillBtn = document.getElementById('fillBtn');
